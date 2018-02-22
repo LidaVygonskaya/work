@@ -87,8 +87,6 @@ for i in range(1, len(d_list)):
     g = (d_list[i] - c_list[i] * g_list[i - 1]) / w_list[i]
     g_list.append(g)
 
-print(len(g_list))
-
 P_list = [g_list[-1]]
 for i in range(len(g_list) - 2, -1, -1):
     P = g_list[i] - q_list[i] * P_list[-1]
@@ -102,10 +100,55 @@ P_list.reverse()
 P_list.append(P_Nx)
 
 
-time = tau
+def thomas_method(list_P):
+    w_1 = a_list[0]
+    q_list = []
+    w_list = [w_1]
+    for i in range(1, len(a_list)):
+        q = b_list[i - 1] / w_list[i - 1]
+        q_list.append(q)
+        w_i = a_list[i] - c_list[i] * q_list[i - 1]
+        w_list.append(w_i)
 
+    g_list = [d_list[0] / w_list[0]]
+    for i in range(1, len(d_list)):
+        g = (d_list[i] - c_list[i] * g_list[i - 1]) / w_list[i]
+        g_list.append(g)
+
+
+    list_P = [g_list[-1]]
+    for i in range(len(g_list) - 2, -1, -1):
+        P = g_list[i] - q_list[i] * list_P[-1]
+        list_P.append(P)
+    print("len" + str(len(list_P)))
+    # Add usloviya na granitsah
+    list_P.append(P_0)
+    list_P.reverse()
+    list_P.append(P_Nx)
+
+def initialize_d(list_d, list_P):
+    for l in range(1, N):
+        d = count_d(list_P[l])
+        list_d.append(d)
+
+    list_d[0] = list_d[0] - c_list[0] * P_0
+    list_d[-1] = list_d[-1] - b_list[-1] * P_Nx
+
+
+time = tau
+i = 1
 while time <= time_max:
-    
+    d_list = []
+    initialize_d(d_list, P_list)
+    P_list = []
+    thomas_method(P_list)
+    i += 1
+    if i / 10 == 0:
+        name = 'graph ' + str(i)
+        plt.plot(x, P_list)
+        plt.xlabel('x')
+        plt.ylabel('P')
+        plt.savefig(name)
     time += tau
 
 
