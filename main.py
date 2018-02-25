@@ -39,14 +39,63 @@ def count_a(index, x_list):
     T_X_minus = (k / mu) * (1 / (x_list[index] - x_list[index - 1]))
     return -(T_X_plus + T_X_minus + (h * fi * c_f / tau))
 
+
 def count_b(index, x_list):
     return (k / mu) * (1 / (x_list[index + 1] - x_list[index]))
+
 
 def count_c(index, x_list):
     return (k / mu) * (1 / (x_list[index] - x_list[index - 1]))
 
+
 def count_d(P_i_n):
     return -(P_i_n * h * fi * c_f / tau)
+
+
+def thomas_method(list_a, list_b, list_c, list_d):
+    w_1 = list_a[0]
+    q_list = []
+    w_list = [w_1]
+    for j in range(1, len(list_a)):
+        q = list_b[j - 1] / w_list[j - 1]
+        q_list.append(q)
+        w = list_a[j] - list_c[j] * q_list[j - 1]
+        w_list.append(w)
+
+    g_list = [list_d[0] / w_list[0]]
+    for j in range(1, len(list_d)):
+        g = (list_d[j] - list_c[j] * g_list[j - 1]) / w_list[j]
+        g_list.append(g)
+
+    list_P = [g_list[-1]]
+    for j in range(len(g_list) - 2, -1, -1):
+        P = g_list[j] - q_list[j] * list_P[-1]
+        list_P.append(P)
+    # Add usloviya na granitsah
+    list_P.append(P_0)
+    list_P.reverse()
+    list_P.append(P_Nx)
+    return list_P
+
+
+def initialize_P(P0, Pn, Pinit):
+    list_P = []
+    list_P.append(P0)
+    for i in range(1, N):
+        list_P.append(Pinit)
+    list_P.append(Pn)
+    return list_P
+
+
+def initialize_d(list_P, list_c, list_b):
+    list_d = []
+    for j in range(1, N):
+        d = count_d(list_P[j])
+        list_d.append(d)
+
+    list_d[0] -= list_c[0] * list_P[0]
+    list_d[-1] -= list_b[-1] * list_P[-1]
+    return list_d
 
 
 a_list = []
@@ -62,125 +111,25 @@ for i in range(1, N):
     b_list.append(b)
     c_list.append(c)
 
-
-#srazu posle t = 0
-d_list = []
-for i in range(1, N):
-    d = count_d(P_init)
-    d_list.append(d)
-
-d_list[0] = d_list[0] - c_list[0] * P_0
-d_list[-1] = d_list[-1] - b_list[-1] * P_Nx
-
-#thomas method
-w_1 = a_list[0]
-q_list = []
-w_list = [w_1]
-for i in range(1, len(a_list)):
-    q = b_list[i - 1] / w_list[i - 1]
-    q_list.append(q)
-    w_i = a_list[i] - c_list[i] * q_list[i - 1]
-    w_list.append(w_i)
-
-g_list = [d_list[0] / w_list[0]]
-for i in range(1, len(d_list)):
-    g = (d_list[i] - c_list[i] * g_list[i - 1]) / w_list[i]
-    g_list.append(g)
-
-P_list = [g_list[-1]]
-for i in range(len(g_list) - 2, -1, -1):
-    P = g_list[i] - q_list[i] * P_list[-1]
-    P_list.append(P)
-
-
-
-#Add usloviya na granitsah
-P_list.append(P_0)
-P_list.reverse()
-P_list.append(P_Nx)
-
-
-def thomas_method(list_P):
-    w_1 = a_list[0]
-    q_list = []
-    w_list = [w_1]
-    for i in range(1, len(a_list)):
-        q = b_list[i - 1] / w_list[i - 1]
-        q_list.append(q)
-        w_i = a_list[i] - c_list[i] * q_list[i - 1]
-        w_list.append(w_i)
-
-    g_list = [d_list[0] / w_list[0]]
-    for i in range(1, len(d_list)):
-        g = (d_list[i] - c_list[i] * g_list[i - 1]) / w_list[i]
-        g_list.append(g)
-
-
-    list_P = [g_list[-1]]
-    for i in range(len(g_list) - 2, -1, -1):
-        P = g_list[i] - q_list[i] * list_P[-1]
-        list_P.append(P)
-    print("len" + str(len(list_P)))
-    # Add usloviya na granitsah
-    list_P.append(P_0)
-    list_P.reverse()
-    list_P.append(P_Nx)
-
-def initialize_d(list_d, list_P):
-    for l in range(1, N):
-        d = count_d(list_P[l])
-        list_d.append(d)
-
-    list_d[0] = list_d[0] - c_list[0] * P_0
-    list_d[-1] = list_d[-1] - b_list[-1] * P_Nx
+P_list = initialize_P(P_0, P_Nx, P_init)
+d_list = initialize_d(P_list, c_list, b_list)
 
 
 time = tau
-i = 1
+counter = 1
+
 while time <= time_max:
-    d_list = []
-    initialize_d(d_list, P_list)
-    P_list = []
-    thomas_method(P_list)
-    i += 1
-    if i / 10 == 0:
-        name = 'graph ' + str(i)
+    P_list = thomas_method(a_list, b_list, c_list, d_list)
+    if counter % 30 == 0:
+        name = 'graph ' + str(counter)
         plt.plot(x, P_list)
         plt.xlabel('x')
         plt.ylabel('P')
         plt.savefig(name)
+        plt.clf()
+    counter += 1
     time += tau
+    d_list = initialize_d(P_list, c_list, b_list)
 
-
-
-
-
-
-plt.plot(x, P_list)
-plt.xlabel('x')
-plt.ylabel('P')
-plt.show()
-
-#plt.savefig('name.png')
-
-
-#
-#
-#
-#
-#
-#
-# for time in range(int(time_max / tau)):
-#     d_list = []
-#     for i in range(1, N):
-#         if time == 0:
-#             d = count_d(P_init)
-#
-#         d_list.append(d)
-#
-#     d_list = [] # from i  = 1 to i = N - 1
-#     d = cou
-#
-#
 
 
