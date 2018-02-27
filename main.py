@@ -126,9 +126,9 @@ def count_b_nonlinear(list_P, index, x_list):
 
 
 def count_a_nonlinear(list_P, index, x_list):
-    T_X_plus = (k / mu) * (1 / (x_list[index + 1] - x_list[index])) * ro(max(list_P[index], list_P[index + 1]))
-    T_X_minus = (k / mu) * (1 / (x_list[index] - x_list[index - 1])) * ro(max(list_P[index], list_P[index - 1]))
-    return -(T_X_minus + T_X_plus + h * beta(list_P[index]) / tau)
+    t_x_plus = (k / mu) * (1 / (x_list[index + 1] - x_list[index])) * ro(max(list_P[index], list_P[index + 1]))
+    t_x_minus = (k / mu) * (1 / (x_list[index] - x_list[index - 1])) * ro(max(list_P[index], list_P[index - 1]))
+    return -(t_x_minus + t_x_plus + h * beta(list_P[index]) / tau)
 
 
 def count_d_nonlinear(P_i_n):
@@ -144,6 +144,21 @@ def initialize_d_nonlinear(list_P, list_c, list_b):
     list_d[0] -= list_c[0] * list_P[0]
     list_d[-1] -= list_b[-1] * list_P[-1]
     return list_d
+
+
+def initialize_abc(list_P, x_list):
+    list_a = []
+    list_b = []
+    list_c = []
+    for j in range(1, N):
+        _a = count_a_nonlinear(list_P, j, x_list)
+        _b = count_b_nonlinear(list_P, j, x_list)
+        _c = count_c_nonlinear(list_P, j, x_list)
+        list_a.append(_a)
+        list_b.append(_b)
+        list_c.append(_c)
+    list_abc = [list_a, list_b, list_c]
+    return list_abc
 
 
 P_list = initialize_P(P_0, P_Nx, P_init)
