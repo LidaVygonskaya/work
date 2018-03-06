@@ -361,5 +361,3 @@ while time < time_max:
 #     time += tau
 #     d_list = initialize_d(P_list, c_list, b_list)
 
-
-
