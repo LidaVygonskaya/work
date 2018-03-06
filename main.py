@@ -170,7 +170,7 @@ def initialize_abc(list_P, x_list):
 #Newtons method
 def count_discrepancy(list_abcd, list_p, index):
     a, b, c, d = list_abcd
-    return c[index] * list_p[index] + a[index] * list_p[index + 1]  + b[index] * list_p[index + 2] - d[index]
+    return c[index] * list_p[index] + a[index] * list_p[index + 1] + b[index] * list_p[index + 2] - d[index]
 
 
 def diff_simple(list_a, list_b, list_c):
@@ -183,12 +183,15 @@ def diff_simple(list_a, list_b, list_c):
 
 def diff(list_p_k, list_delta, list_abcd):
     list_diff = []
+    a, b, c, d = list_abcd
+
     for j in range(N - 1):
-        R_minus = list_abcd[2][j] * (list_p_k[j] + list_delta[j]) + list_abcd[0][j] * list_p_k[j + 1] + list_abcd[1][j] * list_p_k[j + 2]
 
-        R_0 = list_abcd[2][j] * list_p_k[j] + list_abcd[0][j] * (list_p_k[j + 1] + list_delta[j + 1]) + list_abcd[1][j] * list_p_k[j + 2]
+        R_minus = c[j] * (list_p_k[j] + list_delta[j]) + a[j] * list_p_k[j + 1] + b[j] * list_p_k[j + 2] - d[j]
 
-        R_plus = list_abcd[2][j] * list_p_k[j] + list_abcd[0][j] * list_p_k[j + 1] + list_abcd[1][j] * (list_p_k[j + 2] + list_delta[j + 2])
+        R_0 = c[j] * list_p_k[j] + a[j] * (list_p_k[j + 1] + list_delta[j + 1]) + b[j] * list_p_k[j + 2] - d[j]
+
+        R_plus = c[j] * list_p_k[j] + a[j] * list_p_k[j + 1] + b[j] * (list_p_k[j + 2] + list_delta[j + 2]) - d[j]
 
         R_diff_minus = (R_minus - count_discrepancy(list_abcd, list_p_k, j)) / list_delta[j]
         R_diff_0 = (R_0 - count_discrepancy(list_abcd, list_p_k, j)) / list_delta[j + 1]
@@ -242,7 +245,7 @@ while time < time_max:
             R = count_discrepancy(abcd_list, P_list_k, i)
             R_list.append(R)
 
-        #R_diff = diff(P_list_k, delta_list_k, abcd_list)
+        R_diff1 = diff(P_list_k, delta_list_k, abcd_list)
         R_diff = diff_simple(a_list, b_list, c_list)
         a_delta_list = []
         b_delta_list = []
