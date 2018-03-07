@@ -84,6 +84,11 @@ def count_wi(_ro):
     return (math.pi * 2.0 * k * h * _ro / mu) * (1 / math.log(r_e/r_w))
 
 
+def count_tolerance(matrix):
+    matrix_abs = np.absolute(matrix)
+    return np.amax(matrix_abs)
+
+
 p = np.ones((N_x - 1, N_y - 1)) * P_init
 wi = np.zeros((N_x - 1, N_y - 1))
 tx_plus = np.zeros((N_x - 1, N_y - 1))
@@ -114,7 +119,7 @@ for j in range(N_x - 1):
             ty_plus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i + 1][j]))
     for i in range(N_y - 1):
         if i == 0:
-           ty_minus[i][j] = 0.0
+            ty_minus[i][j] = 0.0
         else:
             ty_minus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i - 1][j]))
 
@@ -161,14 +166,46 @@ for i in range(N_y - 1):
     for j in range(N_x - 1):
         r[i][j] = c[i][j] * p_gr[i + 1][j] + g[i][j] * p_gr[i][j + 1] + a[i][j] * p_gr[i + 1][j + 1] + f[i][j] * p_gr[i + 2][j + 1] + b[i][j] * p_gr[i + 1][j + 2] - d[i][j]
 
-print(r.shape)
+print(r.shape[0])
 
-delta = np.ones((N_y - 1), (N_x - 1)) * delta_0
+delta = np.ones((N_y - 1, N_x - 1)) * delta_0
+delta_k = np.zeros((N_y - 1, N_x - 1))
 ksi = delta.copy()
+ksi_k = np.ones((N_y - 1, N_x - 1))
 
-for i in range(1, N_y - 2):
-    for j in range(1, N_x - 2):
-        ksi[i][j] = (1 / r_y_diff_minus[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] -r_y_diff_plus[i][j] * )
+
+while count_tolerance(ksi - ksi_k) > delta_max:
+    ksi_k = ksi.copy()
+    for i in range(1, N_y - 2):
+        for j in range(1, N_x - 2):
+            ksi[i][j] = (1 / r_diff[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] - r_y_diff_plus[i][j] * ksi[i + 1][j] - r_x_diff_minus[i][j] * ksi[i][j - 1] - r_y_diff_minus[i][j] * ksi[i - 1][j])
+    tolerance = count_tolerance(ksi - ksi_k)
+    print(tolerance)
+
+
+time = tau
+counter = 1
+while time < time_max:
+    a
+    while count_tolerance(delta_k - delta) > delta_max:
+        delta_k = delta.copy()
+        while count_tolerance(ksi - ksi_k) > delta_max:
+            ksi_k = ksi.copy()
+            for i in range(1, N_y - 2):
+                for j in range(1, N_x - 2):
+                    ksi[i][j] = (1 / r_diff[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] - r_y_diff_plus[i][j] * ksi[i + 1][j] - r_x_diff_minus[i][j] * ksi[i][j - 1] - r_y_diff_minus[i][j] * ksi[i - 1][j])
+            #tolerance = count_tolerance(ksi - ksi_k)
+        delta = ksi.copy()
+        p = p + delta
+
+    if counter % 10 == 0:
+        
+    time += tau
+    counter += 1
+
+
+
+
 
 
 
