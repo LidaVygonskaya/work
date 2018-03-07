@@ -186,7 +186,7 @@ while count_tolerance(ksi - ksi_k) > delta_max:
 time = tau
 counter = 1
 while time < time_max:
-    a
+    
     while count_tolerance(delta_k - delta) > delta_max:
         delta_k = delta.copy()
         while count_tolerance(ksi - ksi_k) > delta_max:
@@ -199,7 +199,7 @@ while time < time_max:
         p = p + delta
 
     if counter % 10 == 0:
-        
+        print('meow')
     time += tau
     counter += 1
 
