@@ -163,6 +163,14 @@ for i in range(N_y - 1):
 
 print(r.shape)
 
+delta = np.ones((N_y - 1), (N_x - 1)) * delta_0
+ksi = delta.copy()
+
+for i in range(1, N_y - 2):
+    for j in range(1, N_x - 2):
+        ksi[i][j] = (1 / r_y_diff_minus[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] -r_y_diff_plus[i][j] * )
+
+
 
 #
 #
