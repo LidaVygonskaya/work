@@ -186,7 +186,7 @@ while count_tolerance(ksi - ksi_k) > delta_max:
 time = tau
 counter = 1
 while time < time_max:
-    
+
     while count_tolerance(delta_k - delta) > delta_max:
         delta_k = delta.copy()
         while count_tolerance(ksi - ksi_k) > delta_max:
