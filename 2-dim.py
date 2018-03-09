@@ -72,16 +72,11 @@ def ro(p):
 def fi_p(p):
     return fi_0 * (1.0 + c_r * (p - P_01))
 
-def count_beta(p):
-    return fi_0 * c_r * ro(p) + c_f * ro_0 * fi_p(p)
+# def count_beta(p):
+#     return fi_0 * c_r * ro(p) + c_f * ro_0 * fi_p(p)
 
 def count_re():
     return h * math.exp(-math.pi / 2.0)
-
-
-def count_wi(_ro):
-    r_e = count_re()
-    return (math.pi * 2.0 * k * h * _ro / mu) * (1 / math.log(r_e/r_w))
 
 
 def count_tolerance(matrix):
@@ -89,64 +84,75 @@ def count_tolerance(matrix):
     return np.amax(matrix_abs)
 
 
-p = np.ones((N_x - 1, N_y - 1)) * P_init
-wi = np.zeros((N_x - 1, N_y - 1))
-tx_plus = np.zeros((N_x - 1, N_y - 1))
-tx_minus = np.zeros((N_x - 1, N_y - 1))
-ty_plus = np.zeros((N_x - 1, N_y - 1))
-ty_minus = np.zeros((N_x - 1, N_y - 1))
-beta = np.zeros((N_x - 1, N_y - 1))
-
-# TX, TY, WI, beta
-for i in range(N_y - 1):
-    for j in range(N_x - 1):
-        if j == N_x - 2:
-            tx_plus[i][j] = 0.0
-        else:
-            tx_plus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i][j + 1]))
-
-    for j in range(N_x - 1):
-        if j == 0:
-            tx_minus[i][j] = 0.0
-        else:
-            tx_minus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i][j - 1]))
-
-for j in range(N_x - 1):
-    for i in range(0, N_y - 1):
-        if i == N_y - 2:
-            ty_plus[i][j] = 0.0
-        else:
-            ty_plus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i + 1][j]))
+def count_tx(p):
+    tx_plus = np.zeros((N_x - 1, N_y - 1))
+    tx_minus = np.zeros((N_x - 1, N_y - 1))
     for i in range(N_y - 1):
-        if i == 0:
-            ty_minus[i][j] = 0.0
-        else:
-            ty_minus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i - 1][j]))
+        for j in range(N_x - 1):
+            if j == N_x - 2:
+                tx_plus[i][j] = 0.0
+            else:
+                tx_plus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i][j + 1]))
+
+        for j in range(N_x - 1):
+            if j == 0:
+                tx_minus[i][j] = 0.0
+            else:
+                tx_minus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i][j - 1]))
+    tx_list = [tx_minus, tx_plus]
+    return tx_list
 
 
-re = count_re()
-for i in range(N_y - 1):
+def count_ty(p):
+    ty_plus = np.zeros((N_x - 1, N_y - 1))
+    ty_minus = np.zeros((N_x - 1, N_y - 1))
     for j in range(N_x - 1):
-        wi[i][j] = (ro(p[i][j]) * 2 * math.pi * k * h / mu) * (1 / math.log(re / r_w))
-        beta[i][j] = count_beta(p[i][j])
+        for i in range(0, N_y - 1):
+            if i == N_y - 2:
+                ty_plus[i][j] = 0.0
+            else:
+                ty_plus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i + 1][j]))
+        for i in range(N_y - 1):
+            if i == 0:
+                ty_minus[i][j] = 0.0
+            else:
+                ty_minus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p[i][j], p[i - 1][j]))
+    ty_list = [ty_minus, ty_plus]
+    return ty_list
 
 
+def count_beta(p):
+    beta = np.zeros((N_x - 1, N_y - 1))
+    for i in range(N_y - 1):
+        for j in range(N_x - 1):
+            beta[i][j] = fi_0 * c_r * ro(p[i][j]) + c_f * ro_0 * fi_p(p[i][j])
+    return beta
 
+
+def count_wi(p):
+    wi = np.zeros((N_x - 1, N_y - 1))
+    re = count_re()
+    for i in range(N_y - 1):
+        for j in range(N_x - 1):
+            if i == 45 and j == 45:
+                wi[i][j] = (ro(p[i][j]) * 2 * math.pi * k * h / mu) * (1 / math.log(re / r_w))
+    return wi
+
+
+p = np.ones((N_x - 1, N_y - 1)) * P_init
+beta = count_beta(p)
+wi = count_wi(p)
 #cofficients
-c = tx_minus.copy()
-b = tx_plus.copy()
-g = ty_minus.copy()
-f = ty_plus.copy()
-a = -(tx_plus + tx_minus + ty_minus + ty_plus - (V_ij * beta / tau)) + wi
+c = count_tx(p)[0]
+b = count_tx(p)[1]
+g = count_ty(p)[0]
+f = count_ty(p)[1]
+a = -(b + c + g + f - (V_ij * beta / tau)) + wi
 d = wi * P_w - V_ij * beta / tau
+print(d[45][45])
 
 #nevyazka diff
-r_x_diff_minus = c.copy()
-r_x_diff_plus = b.copy()
-r_y_diff_minus = g.copy()
-r_y_diff_plus = f.copy()
-r_diff = a.copy()
-r = np.zeros((N_x - 1, N_y - 1))
+
 
 #added p granichniye
 p_gr = np.zeros((N_y + 1, N_x + 1))
@@ -162,47 +168,77 @@ for j in range(1, N_x - 1):
     p_gr[N_y][j] = p[N_x - 2][j]
 
 
-for i in range(N_y - 1):
-    for j in range(N_x - 1):
-        r[i][j] = c[i][j] * p_gr[i + 1][j] + g[i][j] * p_gr[i][j + 1] + a[i][j] * p_gr[i + 1][j + 1] + f[i][j] * p_gr[i + 2][j + 1] + b[i][j] * p_gr[i + 1][j + 2] - d[i][j]
 
-print(r.shape[0])
-
-delta = np.ones((N_y - 1, N_x - 1)) * delta_0
-delta_k = np.zeros((N_y - 1, N_x - 1))
+delta = np.ones((N_y + 1, N_x + 1)) * delta_0
+delta_k = np.zeros((N_y + 1, N_x + 1))
 ksi = delta.copy()
-ksi_k = np.ones((N_y - 1, N_x - 1))
+ksi_k = np.ones((N_y + 1, N_x + 1))
 
 
-while count_tolerance(ksi - ksi_k) > delta_max:
-    ksi_k = ksi.copy()
-    for i in range(1, N_y - 2):
-        for j in range(1, N_x - 2):
-            ksi[i][j] = (1 / r_diff[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] - r_y_diff_plus[i][j] * ksi[i + 1][j] - r_x_diff_minus[i][j] * ksi[i][j - 1] - r_y_diff_minus[i][j] * ksi[i - 1][j])
-    tolerance = count_tolerance(ksi - ksi_k)
+
+
+while count_tolerance(delta_k - delta) > delta_max:
+    beta = count_beta(p)
+    wi = count_wi(p)
+    c = count_tx(p)[0]
+    b = count_tx(p)[1]
+    g = count_ty(p)[0]
+    f = count_ty(p)[1]
+    a = -(b + c + g + f - (V_ij * beta / tau)) + wi
+    d = wi * P_w - V_ij * beta / tau
+
+    r_x_diff_minus = c.copy()
+    r_x_diff_plus = b.copy()
+    r_y_diff_minus = g.copy()
+    r_y_diff_plus = f.copy()
+    r_diff = a.copy()
+    r = np.zeros((N_x - 1, N_y - 1))
+
+    for i in range(N_y - 1):
+        for j in range(N_x - 1):
+            r[i][j] = c[i][j] * p_gr[i + 1][j] + g[i][j] * p_gr[i][j + 1] + a[i][j] * p_gr[i + 1][j + 1] + f[i][j] * \
+                                                                                                           p_gr[i + 2][
+                                                                                                               j + 1] + \
+                      b[i][j] * p_gr[i + 1][j + 2] - d[i][j]
+
+    delta_k = delta.copy()
+    while count_tolerance(ksi - ksi_k) > 10 ** (-2):
+        ksi_k = ksi.copy()
+        for i in range(N_y - 1):
+            ksi[i + 1][1:-1] = (1 / r_diff[i]) * (-r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] * ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
+        tolerance = count_tolerance(ksi - ksi_k)
+        print(tolerance)
+    tolerance = count_tolerance(delta - delta_k)
     print(tolerance)
+    delta = ksi.copy()
+    p += delta[1:-1][1:-1]
+    p_gr += delta
+
+print(p_gr)
+
+    #print(tolerance)
 
 
 time = tau
 counter = 1
-while time < time_max:
-    
-    while count_tolerance(delta_k - delta) > delta_max:
-        delta_k = delta.copy()
-        while count_tolerance(ksi - ksi_k) > delta_max:
-            ksi_k = ksi.copy()
-            for i in range(1, N_y - 2):
-                for j in range(1, N_x - 2):
-                    ksi[i][j] = (1 / r_diff[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] - r_y_diff_plus[i][j] * ksi[i + 1][j] - r_x_diff_minus[i][j] * ksi[i][j - 1] - r_y_diff_minus[i][j] * ksi[i - 1][j])
-            #tolerance = count_tolerance(ksi - ksi_k)
-        delta = ksi.copy()
-        p = p + delta
-
-    if counter % 10 == 0:
-        print('meow')
-    time += tau
-    counter += 1
-
+# while time < time_max:
+#
+#     while count_tolerance(delta_k - delta) > delta_max:
+#         delta_k = delta.copy()
+#         while count_tolerance(ksi - ksi_k) > delta_max:
+#             ksi_k = ksi.copy()
+#             for i in range(1, N_y - 2):
+#                 for j in range(1, N_x - 2):
+#                     ksi[i][j] = (1 / r_diff[i][j]) * (-r[i][j] - r_x_diff_plus[i][j] * ksi[i][j + 1] - r_y_diff_plus[i][j] * ksi[i + 1][j] - r_x_diff_minus[i][j] * ksi[i][j - 1] - r_y_diff_minus[i][j] * ksi[i - 1][j])
+#             #tolerance = count_tolerance(ksi - ksi_k)
+#         delta = ksi.copy()
+#         p = p + delta
+#
+#     if counter % 10 == 0:
+#         print('meow')
+#     time += tau
+#     counter += 1
+#
 
 
 
