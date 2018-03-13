@@ -51,7 +51,8 @@ y_s = 250
 
 #stepping
 tau = 86400.0 #s- time step
-time_max = 365.25 * 4 * tau
+#time_max = 365.25 * 4 * tau
+time_max = 365.25 * 1 * tau
 dt_out_fields = 10 * tau # frecuency of writing
 
 
@@ -81,7 +82,7 @@ def count_tolerance(matrix):
     matrix_abs = np.absolute(matrix)
     return np.amax(matrix_abs)
 
-
+#dP/dx = 0 na granitsah
 def count_tx(p):
     tx_plus = np.zeros((N_x - 1, N_y - 1))
     tx_minus = np.zeros((N_x - 1, N_y - 1))
@@ -119,8 +120,34 @@ def count_ty(p):
     return ty_list
 
 
+
+#P = const na granitsah
+# def count_tx(p_gr):
+#     tx_plus = np.zeros((N_x - 1, N_y - 1))
+#     tx_minus = np.zeros((N_x - 1, N_y - 1))
+#     for i in range(N_y - 1):
+#         for j in range(N_x - 1):
+#             tx_plus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p_gr[i + 1][j + 1], p_gr[i + 1][j + 2]))
+#         for j in range(N_x - 1):
+#             tx_minus[i][j] = (k_x * (h ** 2) / (mu * h)) * ro(max(p_gr[i + 1][j + 1], p_gr[i + 1][j]))
+#     tx_list = [tx_minus, tx_plus]
+#     return tx_list
+#
+#
+# def count_ty(p_gr):
+#     ty_plus = np.zeros((N_x - 1, N_y - 1))
+#     ty_minus = np.zeros((N_x - 1, N_y - 1))
+#     for j in range(N_x - 1):
+#         for i in range(N_y - 1):
+#             ty_plus[i][j] = (k_y * (h ** 2) / (mu * h)) * ro(max(p_gr[i + 1][j + 1], p_gr[i + 2][j + 1]))
+#         for i in range(N_y - 1):
+#             ty_minus[i][j] = (k_y * (h ** 2) / (mu * h)) * ro(max(p_gr[i + 1][j + 1], p_gr[i][j + 1]))
+#     ty_list = [ty_minus, ty_plus]
+#     return ty_list
+
+
 def count_beta(p):
-    beta = np.zeros((N_x - 1, N_y - 1))
+    beta = np.zeros((N_y - 1, N_x - 1))
     for i in range(N_y - 1):
         for j in range(N_x - 1):
             beta[i][j] = fi_0 * c_r * ro(p[i][j]) + c_f * ro_0 * fi_p(p[i][j])
@@ -133,16 +160,16 @@ def count_wi(p):
     for i in range(N_y - 1):
         for j in range(N_x - 1):
             if i == 45 and j == 45:
-                wi[i][j] = (ro(p[i][j]) * 2 * math.pi * k * h / mu) * (1 / math.log(re / r_w))
+                wi[i][j] = -(ro(p[i][j]) * 2 * math.pi * k * h / mu) * (1 / math.log(re / r_w))
     return wi
 
 
 def count_r(p_gr, c, g, a, f, b, d):
     r = np.zeros((N_x - 1, N_y - 1))
-    m = np.zeros((N_x - 1, N_y - 1))
     for i in range(N_y - 1):
-        r[i] = c[i] * p_gr[i + 1][2:] + g[i] * p_gr[i][1:-1] + a[i] * p_gr[i + 1][1:-1] + f[i] * p_gr[i + 2][1:-1] + b[i] * p_gr[i + 1][2:] - d[i]
+        r[i] = c[i] * p_gr[i + 1][:-2] + g[i] * p_gr[i][1:-1] + a[i] * p_gr[i + 1][1:-1] + f[i] * p_gr[i + 2][1:-1] + b[i] * p_gr[i + 1][2:] - d[i] # Check!!!!!?????
     return r
+
 
 def check_diag(a, b, c, g, f):
     for i in range(N_y - 1):
@@ -157,149 +184,95 @@ delta = np.ones((N_y + 1, N_x + 1)) * delta_0
 delta_k = np.zeros((N_y + 1, N_x + 1))
 ksi = delta.copy()
 ksi_k = np.ones((N_y + 1, N_x + 1))
+q_list = []
+time_list = []
+
 
 time = tau
 counter = 1
-# while time < time_max:
-#     delta = np.ones((N_y + 1, N_x + 1)) * delta_0
-#     delta_k = np.zeros((N_y + 1, N_x + 1))
-#     while count_tolerance(delta_k - delta) > delta_max:
-#         ksi = np.ones((N_y + 1, N_x + 1)) * delta_0
-#         #ksi_k = np.ones((N_y + 1, N_x + 1))
-#         beta = count_beta(p)
-#         wi = count_wi(p)
-#         c, b = count_tx(p)
-#         g, f = count_ty(p)
-#         a = -(b + c + g + f) - wi - V_ij * beta / tau
-#         d = wi * P_w - p * (V_ij * beta / tau)
-#
-#         check_diag(a, b, c, g, f)
-#
-#         r_x_diff_minus = c.copy()
-#         r_x_diff_plus = b.copy()
-#         r_y_diff_minus = g.copy()
-#         r_y_diff_plus = f.copy()
-#         r_diff = a.copy()
-#         r = count_r(p_gr, c, g, a, f, b, d)
-#         delta_k = delta.copy()
-#
-#         while count_tolerance(ksi - ksi_k) > 10 ** (-3):
-#             ksi_k = ksi.copy()
-#             for i in range(N_y - 1):
-#                 ksi[i + 1][1:-1] = (1 / r_diff[i]) * (
-#                 -r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] *
-#                 ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
-#             tolerance = count_tolerance(ksi - ksi_k)
-#             print(tolerance)
-#
-#         delta = ksi.copy()
-#         tolerance = count_tolerance(delta - delta_k)
-#         print(str(tolerance) + " meow")
-#         #delta = ksi.copy()
-#
-#         for i in range(N_y - 1):
-#             for j in range(N_x - 1):
-#                 p[i][j] += delta[i + 1][j + 1]
-#         p_gr += delta
-#
-# #if counter % 40 == 0:
-#     name = 'graph_' + str(counter)
-#     fig = plt.figure()
-#     ax = fig.gca(projection='3d')
-#
-#     # Make data.
-#     X = np.arange(x_0 + h / 2, x_N, h)
-#     Y = np.arange(y_0 + h / 2, y_N, h)
-#     X, Y = np.meshgrid(X, Y)
-#
-#     # Plot the surface.
-#     surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,
-#                            linewidth=0, antialiased=False)
-#
-#     plt.show()
-#         #plt.savefig(name)
-#         #plt.clf()
-#
-#     time += tau
-#     counter += 1
+while time < time_max:
+    delta = np.ones((N_y + 1, N_x + 1)) * delta_0
+    delta_k = np.zeros((N_y + 1, N_x + 1))
+    p_n = p.copy()
+    while count_tolerance(delta_k - delta) > delta_max:
+        ksi = np.ones((N_y + 1, N_x + 1)) * delta_0
+        beta = count_beta(p)
+        wi = count_wi(p)
+        c, b = count_tx(p)#!!!!!!!!!!!!!!!!!!!!!
+        g, f = count_ty(p)#!!!!!!!!!!!!!!!!!
+        a = -(b + c + g + f) + wi - V_ij * beta / tau
+        d = wi * P_w - p_n * (V_ij * beta / tau)
 
+        check_diag(a, b, c, g, f)
 
+        r_x_diff_minus = c.copy()
+        r_x_diff_plus = b.copy()
+        r_y_diff_minus = g.copy()
+        r_y_diff_plus = f.copy()
+        r_diff = a.copy()
+        r = count_r(p_gr, c, g, a, f, b, d)
+        delta_k = delta.copy()
 
-
-
-
-
-
-
-while count_tolerance(delta_k - delta) > delta_max:
-    ksi = np.ones((N_y + 1, N_x + 1)) * delta_0
-    ksi_k = np.ones((N_y + 1, N_x + 1))
-
-    beta = count_beta(p)
-    wi = count_wi(p)
-    c, b = count_tx(p)
-    g, f = count_ty(p)
-    a = -(b + c + g + f) - wi - V_ij * beta / tau
-    d = wi * P_w - p * (V_ij * beta / tau)
-    print(a[0][0])
-    #print(b)
-    check_diag(a, b, c, g, f)
-
-    r_x_diff_minus = c.copy()
-    r_x_diff_plus = b.copy()
-    r_y_diff_minus = g.copy()
-    r_y_diff_plus = f.copy()
-    r_diff = a.copy()
-    r = count_r(p_gr, c, g, a, f, b, d)
-    delta_k = delta.copy()
-
-    while count_tolerance(ksi - ksi_k) > 10 ** (-3):
-        ksi_k = ksi.copy()
-        for i in range(N_y - 1):
-            ksi[i + 1][1:-1] = (1 / r_diff[i]) * (
+        while count_tolerance(ksi - ksi_k) > delta_max:
+            ksi_k = ksi.copy()
+            for i in range(N_y - 1):
+                ksi[i + 1][1:-1] = (1 / r_diff[i]) * (
                 -r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] *
                 ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
-        tolerance = count_tolerance(ksi - ksi_k)
-        #print(tolerance)
+            tolerance = count_tolerance(ksi - ksi_k)
+            #print(tolerance)
 
-    delta = ksi.copy()
-    tolerance = count_tolerance(delta - delta_k)
-    print(str(tolerance) + " meow")
-    # delta = ksi.copy()
-
-    for i in range(N_y - 1):
-        for j in range(N_x - 1):
-            p[i][j] += delta[i + 1][j + 1]
-    p_gr += delta
+        delta = ksi.copy()
+        tolerance = count_tolerance(delta - delta_k)
+        print(str(tolerance) + " meow")
 
 
+        for i in range(N_y - 1):
+            for j in range(N_x - 1):
+                p[i][j] += delta[i + 1][j + 1]
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
+
+        p_gr += delta
 
 
-# Make data.
-X = np.arange(-5, 5, 0.25)
-Y = np.arange(-5, 5, 0.25)
-X, Y = np.meshgrid(X, Y)
-X = np.arange(x_0 + h / 2, x_N , h)
-Y = np.arange(y_0 + h / 2, y_N , h)
 
-X, Y = np.meshgrid(X, Y)
 
-# Plot the surface.
-surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
 
-# Customize the z axis.
-#ax.set_zlim(-1.01, 1.01)
-#ax.zaxis.set_major_locator(LinearLocator(10))
-#ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 
-# Add a color bar which maps values to colors.
-#fig.colorbar(surf, shrink=0.5, aspect=5)
+    if counter % 1 == 0:
+        name = 'graph_' + str(counter)
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
 
-plt.show()
+        # Make data.
+        X = np.arange(x_0 + h / 2, x_N, h)
+        Y = np.arange(y_0 + h / 2, y_N, h)
+        X, Y = np.meshgrid(X, Y)
 
+        # Plot the surface.
+        surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+        plt.savefig(name)
+        plt.clf()
+
+    q = wi[45][45] * (p[45][45] - P_w)
+    q_list.append(q)
+    time_list.append(time)
+    print(q_list)
+    print(time_list)
+
+    time += tau
+    counter += 1
+
+# file = open('q_time.txt', 'w')
+# for i in range(len(q_list)):
+#     file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+# file.close()
+#
+# plt.plot(time_list, q_list)
+# plt.show()
+#
+#
+#
 
 
