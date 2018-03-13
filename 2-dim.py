@@ -142,8 +142,6 @@ def count_r(p_gr, c, g, a, f, b, d):
     m = np.zeros((N_x - 1, N_y - 1))
     for i in range(N_y - 1):
         r[i] = c[i] * p_gr[i + 1][2:] + g[i] * p_gr[i][1:-1] + a[i] * p_gr[i + 1][1:-1] + f[i] * p_gr[i + 2][1:-1] + b[i] * p_gr[i + 1][2:] - d[i]
-
-    print(m)
     return r
 
 def check_diag(a, b, c, g, f):
@@ -160,16 +158,92 @@ delta_k = np.zeros((N_y + 1, N_x + 1))
 ksi = delta.copy()
 ksi_k = np.ones((N_y + 1, N_x + 1))
 
+time = tau
+counter = 1
+# while time < time_max:
+#     delta = np.ones((N_y + 1, N_x + 1)) * delta_0
+#     delta_k = np.zeros((N_y + 1, N_x + 1))
+#     while count_tolerance(delta_k - delta) > delta_max:
+#         ksi = np.ones((N_y + 1, N_x + 1)) * delta_0
+#         #ksi_k = np.ones((N_y + 1, N_x + 1))
+#         beta = count_beta(p)
+#         wi = count_wi(p)
+#         c, b = count_tx(p)
+#         g, f = count_ty(p)
+#         a = -(b + c + g + f) - wi - V_ij * beta / tau
+#         d = wi * P_w - p * (V_ij * beta / tau)
+#
+#         check_diag(a, b, c, g, f)
+#
+#         r_x_diff_minus = c.copy()
+#         r_x_diff_plus = b.copy()
+#         r_y_diff_minus = g.copy()
+#         r_y_diff_plus = f.copy()
+#         r_diff = a.copy()
+#         r = count_r(p_gr, c, g, a, f, b, d)
+#         delta_k = delta.copy()
+#
+#         while count_tolerance(ksi - ksi_k) > 10 ** (-3):
+#             ksi_k = ksi.copy()
+#             for i in range(N_y - 1):
+#                 ksi[i + 1][1:-1] = (1 / r_diff[i]) * (
+#                 -r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] *
+#                 ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
+#             tolerance = count_tolerance(ksi - ksi_k)
+#             print(tolerance)
+#
+#         delta = ksi.copy()
+#         tolerance = count_tolerance(delta - delta_k)
+#         print(str(tolerance) + " meow")
+#         #delta = ksi.copy()
+#
+#         for i in range(N_y - 1):
+#             for j in range(N_x - 1):
+#                 p[i][j] += delta[i + 1][j + 1]
+#         p_gr += delta
+#
+# #if counter % 40 == 0:
+#     name = 'graph_' + str(counter)
+#     fig = plt.figure()
+#     ax = fig.gca(projection='3d')
+#
+#     # Make data.
+#     X = np.arange(x_0 + h / 2, x_N, h)
+#     Y = np.arange(y_0 + h / 2, y_N, h)
+#     X, Y = np.meshgrid(X, Y)
+#
+#     # Plot the surface.
+#     surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,
+#                            linewidth=0, antialiased=False)
+#
+#     plt.show()
+#         #plt.savefig(name)
+#         #plt.clf()
+#
+#     time += tau
+#     counter += 1
+
+
+
+
+
+
+
+
 
 while count_tolerance(delta_k - delta) > delta_max:
+    ksi = np.ones((N_y + 1, N_x + 1)) * delta_0
+    ksi_k = np.ones((N_y + 1, N_x + 1))
+
     beta = count_beta(p)
     wi = count_wi(p)
     c, b = count_tx(p)
     g, f = count_ty(p)
     a = -(b + c + g + f) - wi - V_ij * beta / tau
     d = wi * P_w - p * (V_ij * beta / tau)
-
-    check_diag(a,b,c,g,f)
+    print(a[0][0])
+    #print(b)
+    check_diag(a, b, c, g, f)
 
     r_x_diff_minus = c.copy()
     r_x_diff_plus = b.copy()
@@ -182,17 +256,22 @@ while count_tolerance(delta_k - delta) > delta_max:
     while count_tolerance(ksi - ksi_k) > 10 ** (-3):
         ksi_k = ksi.copy()
         for i in range(N_y - 1):
-            ksi[i + 1][1:-1] = (1 / r_diff[i]) * (-r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] * ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
+            ksi[i + 1][1:-1] = (1 / r_diff[i]) * (
+                -r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] *
+                ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
         tolerance = count_tolerance(ksi - ksi_k)
         #print(tolerance)
-    tolerance = count_tolerance(delta - delta_k)
-    print(tolerance)
+
     delta = ksi.copy()
+    tolerance = count_tolerance(delta - delta_k)
+    print(str(tolerance) + " meow")
+    # delta = ksi.copy()
+
     for i in range(N_y - 1):
         for j in range(N_x - 1):
             p[i][j] += delta[i + 1][j + 1]
-    #p += delta[1:-1][1:-1]
     p_gr += delta
+
 
 
 fig = plt.figure()
@@ -205,15 +284,8 @@ Y = np.arange(-5, 5, 0.25)
 X, Y = np.meshgrid(X, Y)
 X = np.arange(x_0 + h / 2, x_N , h)
 Y = np.arange(y_0 + h / 2, y_N , h)
-print(x_0 + h / 2)
-print(x_N - h / 2 - x_0 - h / 2)
-print(h)
 
 X, Y = np.meshgrid(X, Y)
-#print(np.meshgrid(X, Y))
-
-#R = np.sqrt(X**2 + Y**2)
-#Z = np.sin(R)
 
 # Plot the surface.
 surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,

@@ -223,7 +223,7 @@ while time < time_max:
         delta_list_k[i] = delta_0
 
     while count_norm(delta_list_k) > delta_max:
-        print("norm " + str(count_norm(delta_list_k)))
+        #print("norm " + str(count_norm(delta_list_k)))
         a_list = []
         b_list = []
         c_list = []
@@ -236,7 +236,7 @@ while time < time_max:
             a_list.append(a)
             b_list.append(b)
             c_list.append(c)
-
+        print(a)
         d_list = initialize_d_nonlinear(P_list_n, c_list, b_list)
         abcd_list = [a_list, b_list, c_list, d_list]
 
