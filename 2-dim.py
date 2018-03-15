@@ -37,7 +37,8 @@ class Layer:
         self.N_y = 100
         self.N = 100.0
         self.h = (self.x_N - self.x_0) / (self.N_x - 1)
-        self.V_ij = self.h ** 3.0
+        self.z = 10.0
+        self.V_ij = self.h ** 2.0 * self.z
 
     def count_ro(self, pressure_ij):
         return self.ro_0 * (1.0 + self.c_f * (pressure_ij - self.P_02))
@@ -72,7 +73,7 @@ class Well:
         for i in range(layer.N_y - 1):
             for j in range(layer.N_x - 1):
                 if i == self.y_well and j == self.x_well:
-                    wi[i][j] = -(layer.count_ro(pressure_matrix[i][j]) * 2 * math.pi * layer.k * layer.h / layer.mu) * (1 / math.log(re / self.r_w))
+                    wi[i][j] = -(layer.count_ro(pressure_matrix[i][j]) * 2 * math.pi * layer.k * layer.z / layer.mu) * (1 / math.log(re / self.r_w))
         return wi
 
 
@@ -96,13 +97,13 @@ class Solver:
                 if j == layer.N_x - 2:
                     tx_plus[i][j] = 0.0
                 else:
-                    tx_plus[i][j] = (layer.k_x * (layer.h ** 2) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i][j + 1]))
+                    tx_plus[i][j] = (layer.k_x * (layer.h * layer.z) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i][j + 1]))
 
             for j in range(layer.N_x - 1):
                 if j == 0:
                     tx_minus[i][j] = 0.0
                 else:
-                    tx_minus[i][j] = (layer.k_x * (layer.h ** 2) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i][j - 1]))
+                    tx_minus[i][j] = (layer.k_x * (layer.h * layer.z) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i][j - 1]))
         tx_list = [tx_minus, tx_plus]
         return tx_list
 
@@ -115,12 +116,12 @@ class Solver:
                 if i == layer.N_y - 2:
                     ty_plus[i][j] = 0.0
                 else:
-                    ty_plus[i][j] = (layer.k_y * (layer.h ** 2) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i + 1][j]))
+                    ty_plus[i][j] = (layer.k_y * (layer.h * layer.z) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i + 1][j]))
             for i in range(layer.N_y - 1):
                 if i == 0:
                     ty_minus[i][j] = 0.0
                 else:
-                    ty_minus[i][j] = (layer.k_y * (layer.h ** 2) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i - 1][j]))
+                    ty_minus[i][j] = (layer.k_y * (layer.h * layer.z) / (layer.mu * layer.h)) * layer.count_ro(max(pressure_matrix[i][j], pressure_matrix[i - 1][j]))
         ty_list = [ty_minus, ty_plus]
         return ty_list
 
@@ -197,7 +198,7 @@ while time < solver.time_max:
 
         delta = ksi.copy()
         tolerance = solver.count_tolerance(delta - delta_k)
-        print(str(tolerance) + " meow")
+        #print(str(tolerance) + " meow")
 
         for i in range(N_y - 1):
             for j in range(N_x - 1):
@@ -205,7 +206,7 @@ while time < solver.time_max:
 
         p_gr += delta
 
-    if counter % 1 == 0:
+    if counter == 10:
         name = 'graph_' + str(counter)
         fig = plt.figure()
         ax = fig.gca(projection='3d')
@@ -221,23 +222,28 @@ while time < solver.time_max:
         plt.savefig(name)
         plt.clf()
 
-    #q = wi[45][45] * (p[45][45] - P_w)
-    #q_list.append(q)
-    #time_list.append(time)
-    #print(q_list)
-    #print(time_list)
+        x = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
+        file = open('pressure_10-days.txt', 'w')
+        for j in range(len(p[0])):
+            file.write(str(x[j]) + ' ' + str(p[well.y_well][j]) + '\n')
+        file.close()
 
+    q = wi[45][45] * (p[45][45] - well.pressure_w)
+    q_list.append(q)
+    time_list.append(time)
+
+    print(time / 86400.0)
     time += solver.tau
     counter += 1
 
-# file = open('q_time.txt', 'w')
-# for i in range(len(q_list)):
-#     file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
-# file.close()
-#
-# plt.plot(time_list, q_list)
-# plt.show()
-#
+file = open('q_time.txt', 'w')
+for i in range(len(q_list)):
+    file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+file.close()
+
+plt.plot(time_list, q_list)
+plt.show()
+
 #
 #
 
