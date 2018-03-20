@@ -146,10 +146,71 @@ class Solver:
         return np.amax(matrix_abs)
 
     @staticmethod
+    #GZ method
     def count_ksi(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus):
         for i in range(layer.N_y - 1):
             ksi[i + 1][1:-1] = (1 / r_diff[i]) * (-r[i] - r_x_diff_plus[i] * ksi[i + 1][2:] - r_y_diff_plus[i] * ksi[i + 2][1:-1] - r_x_diff_minus[i] * ksi[i + 1][:-2] - r_y_diff_minus[i] * ksi[i][1:-1])
         return ksi
+
+    @staticmethod
+    #Nonlinear GZ method
+    #Going up and down
+    def thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus, index):
+        d_new = -r[index] - r_y_diff_minus[index] * ksi[index][1:-1] - r_y_diff_plus[index] * ksi[index + 2][1:-1]
+        w_1 = r_diff[index][0]
+        q_list = []
+        w_list = [w_1]
+        for j in range(1, len(r_diff[index])):
+            q = r_x_diff_plus[index][j - 1] / w_list[j - 1]
+            q_list.append(q)
+            w = r_diff[index][j] - r_x_diff_minus[index][j] * q_list[j - 1]
+            w_list.append(w)
+
+        g_list = [d_new[0] / w_list[0]]
+
+        for j in range(1, len(d_new)):
+            g = (d_new[j] - r_x_diff_minus[index][j] * g_list[j - 1]) / w_list[j]
+            g_list.append(g)
+
+        list_ksi = [g_list[-1]]
+        for j in range(len(g_list) - 2, -1, -1):
+            ksi_j = g_list[j] - q_list[j] * list_ksi[-1]
+            list_ksi.append(ksi_j)
+
+        list_ksi.reverse()
+        for j in range(layer.N_x - 1):
+            ksi[index + 1][j + 1] = list_ksi[j]
+        return ksi
+
+    @staticmethod
+    def thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus, index):
+        d_new = -r[:, index] - r_x_diff_minus[:, index] * ksi[:, index][1:-1] - r_x_diff_plus[:, index] * ksi[:, index + 2][1:-1]
+        w_1 = r_diff[:, index][0]
+        q_list = []
+        w_list = [w_1]
+        for j in range(1, len(r_diff[:][index])):#!!!!!!
+            q = r_y_diff_plus[j - 1][index] / w_list[j - 1]
+            q_list.append(q)
+            w = r_diff[j][index] - r_y_diff_minus[j][index] * q_list[j - 1]
+            w_list.append(w)
+
+        g_list = [d_new[0] / w_list[0]]
+
+        for j in range(1, len(d_new)):
+            g = (d_new[j] - r_y_diff_minus[j][index] * g_list[j - 1]) / w_list[j]
+            g_list.append(g)
+
+        list_ksi = [g_list[-1]]
+        for j in range(len(g_list) - 2, -1, -1):
+            ksi_j = g_list[j] - q_list[j] * list_ksi[-1]
+            list_ksi.append(ksi_j)
+
+        list_ksi.reverse()
+        for j in range(layer.N_y - 1):
+            ksi[j + 1][index + 1] = list_ksi[j]
+        return ksi
+
+
 
 
 layer = Layer()
@@ -192,13 +253,25 @@ while time < solver.time_max:
 
         while solver.count_tolerance(ksi - ksi_k) > solver.delta_max:
             ksi_k = ksi.copy()
-            ksi = solver.count_ksi(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus)
+            for i in range(layer.N_y - 1):
+                ksi = solver.thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus, i)
+            for i in range(layer.N_y - 2, -1, -1):
+                ksi = solver.thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,r_y_diff_plus, i)
+
+            for i in range(layer.N_x - 1):
+                ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
+                                                   r_y_diff_plus, i)
+
+            for i in range(layer.N_x - 2, -1, -1):
+                ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
+                                                   r_y_diff_plus, i)
+
             tolerance = solver.count_tolerance(ksi - ksi_k)
             #print(tolerance)
 
         delta = ksi.copy()
         tolerance = solver.count_tolerance(delta - delta_k)
-        #print(str(tolerance) + " meow")
+        print(str(tolerance) + " meow")
 
         for i in range(N_y - 1):
             for j in range(N_x - 1):
@@ -206,7 +279,7 @@ while time < solver.time_max:
 
         p_gr += delta
 
-    if counter == 10:
+    if counter % 1 == 0:
         name = 'graph_' + str(counter)
         fig = plt.figure()
         ax = fig.gca(projection='3d')
@@ -228,23 +301,23 @@ while time < solver.time_max:
             file.write(str(x[j]) + ' ' + str(p[well.y_well][j]) + '\n')
         file.close()
 
-    q = wi[45][45] * (p[45][45] - well.pressure_w)
-    q_list.append(q)
-    time_list.append(time)
-
-    print(time / 86400.0)
+    # q = wi[45][45] * (p[45][45] - well.pressure_w)
+    # q_list.append(q)
+    # time_list.append(time)
+    #
+    # print(time / 86400.0)
     time += solver.tau
     counter += 1
 
-file = open('q_time.txt', 'w')
-for i in range(len(q_list)):
-    file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
-file.close()
-
-plt.plot(time_list, q_list)
-plt.show()
-
+# file = open('q_time.txt', 'w')
+# for i in range(len(q_list)):
+#     file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+# file.close()
 #
+# plt.plot(time_list, q_list)
+# plt.show()
+#
+# #
 #
 
 
