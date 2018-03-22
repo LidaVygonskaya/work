@@ -28,7 +28,7 @@ class Layer:
         self.fi_0 = 0.2
         #fluid
         self.c_r = (10 ** (-5)) / self.atm  # new
-        self.c_f = (10 ** (-4)) / self.atm  # szhimaemost
+        self.c_f = (10 ** (-4)) / self.atm  # szhimaemost'
         self.mu = 10 ** (-3)  # Pa * s
         #space
         self.x_0 = 0.0
@@ -61,7 +61,7 @@ class Well:
     def __init__(self):
         self.atm = 101325.0
         self.r_w = 0.108  # meters
-        self.pressure_w = 30 * self.atm
+        self.pressure_w = 30.0 * self.atm
         self.x_well = 45
         self.y_well = 45
 

@@ -6,17 +6,19 @@ from matplotlib import pyplot as plt
 
 class ImplicitSolver:
     def __init__(self):
-        self.tau = 701.0  # s- time step
+        self.tau = 72.0  # s- time step
         # time_max = 365.25 * 4 * tau
-        self.time_max = 365.25 * 1 * self.tau
+        self.time_max = 365.25 * 1 * 86400.0
         self.t_out_fields = 10 * self.tau  # frecuency of writing
 
     #@staticmethod
-    def count_pressure(self, layer, a, b, c, f, g, pressure, beta_matrix, q_matrix):
+    def count_pressure(self, layer, a, b, c, f, g, pressure, beta_matrix,wi_matrix, well):
+        pressure_n = np.ones((N_y + 1, N_x + 1)) * layer.P_init
         for i in range(layer.N_y - 1):
             for j in range(layer.N_x - 1):
-                pressure[i][j] = (self.tau / (layer.V_ij * beta_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] - q_matrix[i][j] * layer.V_ij)
-        return pressure
+                #pressure_n[i + 1][j + 1] = (self.tau / (layer.V_ij * beta_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] + q_matrix[i][j])
+                pressure_n[i + 1][j + 1] = (1.0 / ((layer.V_ij * beta_matrix[i][j] / self.tau) - wi_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] + wi_matrix[i][j] * well.pressure_w)
+        return pressure_n
 
     @staticmethod
     def count_q(q_matrix, well, wi_matrix, p_matrix):
@@ -46,8 +48,10 @@ N_y = layer.N_y
 p_matrix = np.ones((N_y + 1, N_x + 1)) * layer.P_init #размер 101 на 101
 q_matrix = np.ones((N_y - 1, N_x - 1))
 time = solver.tau
+p_list = []
 q_list = []
 time_list = []
+counter = 1
 while time < solver.time_max:
     beta = layer.count_beta(p_matrix)
     wi = well.count_wi(p_matrix, layer)
@@ -55,13 +59,22 @@ while time < solver.time_max:
     c, b = solver.count_tx(p_matrix, layer)
     g, f = solver.count_ty(p_matrix, layer)
     a = -(b + c + g + f) + layer.V_ij * beta / solver.tau
-    t = implicit_solver.count_tau(c, b, g, f, beta, layer)
+    #t = implicit_solver.count_tau(c, b, g, f, beta, layer)
     #print(t)
-    p_matrix = implicit_solver.count_pressure(layer, a, b, c, f, g, p_matrix, beta, q_matrix)
-    # fig = plt.figure()
-    # ax = fig.gca(projection='3d')
-    #
-    # # Make data.
+    p_matrix_new = implicit_solver.count_pressure(layer, a, b, c, f, g, p_matrix, beta, wi, well)
+    p_matrix = p_matrix_new.copy()
+    if counter == 12000:
+        p_list = p_matrix[45, :]
+        X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
+        file_p = open('pressure_10_days_72.txt', 'w')
+        for i in range(len(p_list[1:-1])):
+            file_p.write(str(X[i]) + '  ' + str(p_list[1:-1][i]) + '\n')
+        file_p.close()
+
+    #fig = plt.figure()
+    #ax = fig.gca(projection='3d')
+
+    # Make data.
     # X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
     # Y = np.arange(layer.y_0 + layer.h / 2, layer.y_N, layer.h)
     # X, Y = np.meshgrid(X, Y)
@@ -70,13 +83,24 @@ while time < solver.time_max:
     # surf = ax.plot_surface(X, Y, p_matrix[1:-1, 1:-1], cmap=cm.coolwarm,
     #                        linewidth=0, antialiased=False)
     # #plt.savefig(name)
-    # plt.clf()
-    # #plt.show()
+    # #plt.clf()
+    # plt.show()
     time_list.append(time)
-    q_list.append(q_matrix[45, 45] / 86400.0)
+    q_list.append(q_matrix[45, 45])
+    print(str(time) + ' ' + str(q_matrix[45, 45]))
     time += solver.tau
-    print(time)
+    counter += 1
+
+
     # #d = wi * well.pressure_w - p_n * (layer.V_ij * beta / solver.tau)
 
-plt.plot(time_list, q_list)
-plt. show()
+file = open('q_time_72.txt', 'w')
+for i in range(len(q_list)):
+    file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+file.close()
+#
+# X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
+# file_p = open('pressure_10_days_720.txt', 'w')
+# for i in range(len(p_list)):
+#     file.write(str(X[i]) + '  ' + str(p_list[1:-1][i]) + '\n')
+# file.close()
