@@ -9,6 +9,8 @@ import copy
 # coding: utf8
 
 
+
+
 class Layer:
     #Класс пласта
     def __init__(self):
@@ -211,113 +213,111 @@ class Solver:
         return ksi
 
 
-
-
-layer = Layer()
-solver = Solver()
-well = Well()
-N_x = layer.N_x
-N_y = layer.N_y
-p = np.ones((N_x - 1, N_y - 1)) * layer.P_init
-p_gr = np.ones((N_y + 1, N_x + 1)) * layer.P_init
-delta = np.ones((N_y + 1, N_x + 1)) * solver.delta_0
-delta_k = np.zeros((N_y + 1, N_x + 1))
-ksi = delta.copy()
-ksi_k = np.ones((N_y + 1, N_x + 1))
-q_list = []
-time_list = []
-time = solver.tau
-counter = 1
-
-while time < solver.time_max:
+if __name__ == "__main__":
+    layer = Layer()
+    solver = Solver()
+    well = Well()
+    N_x = layer.N_x
+    N_y = layer.N_y
+    p = np.ones((N_x - 1, N_y - 1)) * layer.P_init
+    p_gr = np.ones((N_y + 1, N_x + 1)) * layer.P_init
     delta = np.ones((N_y + 1, N_x + 1)) * solver.delta_0
     delta_k = np.zeros((N_y + 1, N_x + 1))
-    p_n = p.copy()
-    while solver.count_tolerance(delta_k - delta) > solver.delta_max:
-        ksi = np.ones((N_y + 1, N_x + 1)) * solver.delta_0
-        beta = layer.count_beta(p)
-        wi = well.count_wi(p, layer)
-        c, b = solver.count_tx(p, layer)
-        g, f = solver.count_ty(p, layer)
-        a = -(b + c + g + f) + wi - layer.V_ij * beta / solver.tau
-        d = wi * well.pressure_w - p_n * (layer.V_ij * beta / solver.tau)
+    ksi = delta.copy()
+    ksi_k = np.ones((N_y + 1, N_x + 1))
+    q_list = []
+    time_list = []
+    time = solver.tau
+    counter = 1
 
-        solver.check_diagonal(layer, a, b, c, g, f)
-        r_x_diff_minus = c.copy()
-        r_x_diff_plus = b.copy()
-        r_y_diff_minus = g.copy()
-        r_y_diff_plus = f.copy()
-        r_diff = a.copy()
-        r = solver.count_r(layer, p_gr, c, g, a, f, b, d)
-        delta_k = delta.copy()
+    while time < solver.time_max:
+        delta = np.ones((N_y + 1, N_x + 1)) * solver.delta_0
+        delta_k = np.zeros((N_y + 1, N_x + 1))
+        p_n = p.copy()
+        while solver.count_tolerance(delta_k - delta) > solver.delta_max:
+            ksi = np.ones((N_y + 1, N_x + 1)) * solver.delta_0
+            beta = layer.count_beta(p)
+            wi = well.count_wi(p, layer)
+            c, b = solver.count_tx(p, layer)
+            g, f = solver.count_ty(p, layer)
+            a = -(b + c + g + f) + wi - layer.V_ij * beta / solver.tau
+            d = wi * well.pressure_w - p_n * (layer.V_ij * beta / solver.tau)
 
-        while solver.count_tolerance(ksi - ksi_k) > solver.delta_max:
-            ksi_k = ksi.copy()
-            for i in range(layer.N_y - 1):
-                ksi = solver.thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus, i)
-            for i in range(layer.N_y - 2, -1, -1):
-                ksi = solver.thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,r_y_diff_plus, i)
+            solver.check_diagonal(layer, a, b, c, g, f)
+            r_x_diff_minus = c.copy()
+            r_x_diff_plus = b.copy()
+            r_y_diff_minus = g.copy()
+            r_y_diff_plus = f.copy()
+            r_diff = a.copy()
+            r = solver.count_r(layer, p_gr, c, g, a, f, b, d)
+            delta_k = delta.copy()
 
-            for i in range(layer.N_x - 1):
-                ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
-                                                   r_y_diff_plus, i)
+            while solver.count_tolerance(ksi - ksi_k) > solver.delta_max:
+                ksi_k = ksi.copy()
+                for i in range(layer.N_y - 1):
+                    ksi = solver.thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus, i)
+                for i in range(layer.N_y - 2, -1, -1):
+                    ksi = solver.thomas_method_up_down(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,r_y_diff_plus, i)
 
-            for i in range(layer.N_x - 2, -1, -1):
-                ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
-                                                   r_y_diff_plus, i)
+                for i in range(layer.N_x - 1):
+                    ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
+                                                       r_y_diff_plus, i)
 
-            tolerance = solver.count_tolerance(ksi - ksi_k)
-            #print(tolerance)
+                for i in range(layer.N_x - 2, -1, -1):
+                    ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
+                                                       r_y_diff_plus, i)
 
-        delta = ksi.copy()
-        tolerance = solver.count_tolerance(delta - delta_k)
-        print(str(tolerance) + " meow")
+                tolerance = solver.count_tolerance(ksi - ksi_k)
+                #print(tolerance)
 
-        for i in range(N_y - 1):
-            for j in range(N_x - 1):
-                p[i][j] += delta[i + 1][j + 1]
+            delta = ksi.copy()
+            tolerance = solver.count_tolerance(delta - delta_k)
+            print(str(tolerance) + " meow")
 
-        p_gr += delta
+            for i in range(N_y - 1):
+                for j in range(N_x - 1):
+                    p[i][j] += delta[i + 1][j + 1]
 
-    if counter % 1 == 0:
-        name = 'graph_' + str(counter)
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
+            p_gr += delta
 
-        # Make data.
-        X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
-        Y = np.arange(layer.y_0 + layer.h / 2, layer.y_N, layer.h)
-        X, Y = np.meshgrid(X, Y)
+        if counter % 1 == 0:
+            name = 'graph_' + str(counter)
+            fig = plt.figure()
+            ax = fig.gca(projection='3d')
 
-        # Plot the surface.
-        surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,
-                               linewidth=0, antialiased=False)
-        plt.savefig(name)
-        plt.clf()
+            # Make data.
+            X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
+            Y = np.arange(layer.y_0 + layer.h / 2, layer.y_N, layer.h)
+            X, Y = np.meshgrid(X, Y)
 
-        x = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
-        file = open('pressure_10-days.txt', 'w')
-        for j in range(len(p[0])):
-            file.write(str(x[j]) + ' ' + str(p[well.y_well][j]) + '\n')
-        file.close()
+            # Plot the surface.
+            surf = ax.plot_surface(X, Y, p, cmap=cm.coolwarm,
+                                   linewidth=0, antialiased=False)
+            plt.savefig(name)
+            plt.clf()
 
-    # q = wi[45][45] * (p[45][45] - well.pressure_w)
-    # q_list.append(q)
-    # time_list.append(time)
+            x = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
+            file = open('pressure_10-days.txt', 'w')
+            for j in range(len(p[0])):
+                file.write(str(x[j]) + ' ' + str(p[well.y_well][j]) + '\n')
+            file.close()
+
+        # q = wi[45][45] * (p[45][45] - well.pressure_w)
+        # q_list.append(q)
+        # time_list.append(time)
+        #
+        # print(time / 86400.0)
+        time += solver.tau
+        counter += 1
+
+    # file = open('q_time.txt', 'w')
+    # for i in range(len(q_list)):
+    #     file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+    # file.close()
     #
-    # print(time / 86400.0)
-    time += solver.tau
-    counter += 1
-
-# file = open('q_time.txt', 'w')
-# for i in range(len(q_list)):
-#     file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
-# file.close()
-#
-# plt.plot(time_list, q_list)
-# plt.show()
-#
-# #
-#
-
-
+    # plt.plot(time_list, q_list)
+    # plt.show()
+    #
+    # #
+    #
+    # stuff to run always here such as class/def
