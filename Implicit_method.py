@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 class ImplicitSolver:
     def __init__(self):
-        self.tau = 72.0  # s- time step
+        self.tau = 720.0  # s- time step
         # time_max = 365.25 * 4 * tau
         self.time_max = 365.25 * 1 * 86400.0
         self.t_out_fields = 10 * self.tau  # frecuency of writing
@@ -16,8 +16,8 @@ class ImplicitSolver:
         pressure_n = np.ones((N_y + 1, N_x + 1)) * layer.P_init
         for i in range(layer.N_y - 1):
             for j in range(layer.N_x - 1):
-                #pressure_n[i + 1][j + 1] = (self.tau / (layer.V_ij * beta_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] + q_matrix[i][j])
-                pressure_n[i + 1][j + 1] = (1.0 / ((layer.V_ij * beta_matrix[i][j] / self.tau) - wi_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] + wi_matrix[i][j] * well.pressure_w)
+                pressure_n[i + 1][j + 1] = (self.tau / (layer.V_ij * beta_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] + q_matrix[i][j])
+                #pressure_n[i + 1][j + 1] = (1.0 / ((layer.V_ij * beta_matrix[i][j] / self.tau) - wi_matrix[i][j])) * (c[i][j] * pressure[i + 1][j] + g[i][j] * pressure[i][j + 1] + a[i][j] * pressure[i + 1][j + 1] + b[i][j] * pressure[i + 1][j + 2] + f[i][j] * pressure[i + 2][j + 1] - wi_matrix[i][j] * well.pressure_w)
         return pressure_n
 
     @staticmethod
@@ -63,13 +63,15 @@ while time < solver.time_max:
     #print(t)
     p_matrix_new = implicit_solver.count_pressure(layer, a, b, c, f, g, p_matrix, beta, wi, well)
     p_matrix = p_matrix_new.copy()
-    if counter == 12000:
+    if counter == 1200:
         p_list = p_matrix[45, :]
         X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
-        file_p = open('pressure_10_days_72.txt', 'w')
+        file_p = open('pressure_10_days_720.txt', 'w')
         for i in range(len(p_list[1:-1])):
             file_p.write(str(X[i]) + '  ' + str(p_list[1:-1][i]) + '\n')
         file_p.close()
+
+
 
     #fig = plt.figure()
     #ax = fig.gca(projection='3d')
@@ -87,6 +89,10 @@ while time < solver.time_max:
     # plt.show()
     time_list.append(time)
     q_list.append(q_matrix[45, 45])
+    file = open('q_time_720_step.txt', 'w')
+    for i in range(len(q_list)):
+        file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+    file.close()
     print(str(time) + ' ' + str(q_matrix[45, 45]))
     time += solver.tau
     counter += 1
@@ -94,11 +100,7 @@ while time < solver.time_max:
 
     # #d = wi * well.pressure_w - p_n * (layer.V_ij * beta / solver.tau)
 
-file = open('q_time_72.txt', 'w')
-for i in range(len(q_list)):
-    file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
-file.close()
-#
+
 # X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
 # file_p = open('pressure_10_days_720.txt', 'w')
 # for i in range(len(p_list)):

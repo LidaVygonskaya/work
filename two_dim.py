@@ -61,7 +61,7 @@ class Well:
     def __init__(self):
         self.atm = 101325.0
         self.r_w = 0.108  # meters
-        self.pressure_w = 30.0 * self.atm
+        self.pressure_w = 79.0 * self.atm
         self.x_well = 45
         self.y_well = 45
 
