@@ -27,8 +27,8 @@ class ImplicitSolver:
                 q_matrix[i][j] = wi_matrix[i][j] * (p_matrix[i][j] - well.pressure_w)
         return q_matrix
 
-
-    def count_tau(self, c, b, g, f, beta_matrix, layer):
+    @staticmethod
+    def count_tau( c, b, g, f, beta_matrix, layer):
         matrix = np.ones((layer.N_y - 1, layer.N_x - 1))
         for i in range(layer.N_y - 1):
             for j in range(layer.N_x - 1):
@@ -36,6 +36,7 @@ class ImplicitSolver:
         matrix = np.absolute(matrix)
         tau = np.amax(matrix)
         return tau
+
 
 layer = two_dim.Layer()
 implicit_solver = ImplicitSolver()
@@ -60,7 +61,6 @@ while time < solver.time_max:
     g, f = solver.count_ty(p_matrix, layer)
     a = -(b + c + g + f) + layer.V_ij * beta / solver.tau
     #t = implicit_solver.count_tau(c, b, g, f, beta, layer)
-    #print(t)
     p_matrix_new = implicit_solver.count_pressure(layer, a, b, c, f, g, p_matrix, beta, wi, well)
     p_matrix = p_matrix_new.copy()
     if counter == 1200:
@@ -96,10 +96,6 @@ while time < solver.time_max:
     print(str(time) + ' ' + str(q_matrix[45, 45]))
     time += solver.tau
     counter += 1
-
-
-    # #d = wi * well.pressure_w - p_n * (layer.V_ij * beta / solver.tau)
-
 
 # X = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
 # file_p = open('pressure_10_days_720.txt', 'w')

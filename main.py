@@ -116,7 +116,7 @@ def ro(p):
 
 #zavisimost fi ot davleniya
 def fi_p(p):
-    return fi_0 * (1.0 + c_r * (p - P_01))
+        return fi_0 * (1.0 + c_r * (p - P_01))
 
 
 def beta(p):

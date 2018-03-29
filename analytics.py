@@ -39,6 +39,9 @@ class Integrals:
     def count_q(self, t):
         return -(2.0 * math.pi * self.k * self.z * 1000.0 / self.mu) * ((self.p_w - self.p_0) / self.count_f_integral(self.r_w, t)) * math.exp(-(self.r_w ** 2.0 / (4.0 * self.hi * t)))
 
+    def count_q_d(self):
+        return (2.0 * math.pi * self.k * self.z * 1000.0 / self.mu) * ((self.p_w - self.p_0) / (math.log(250.0 / self.r_w)))
+
     def count_pressure(self, r, t):
         return self.p_0 + ((self.p_w - self.p_0) / self.count_f_integral(self.r_w, t)) * self.count_f_integral(r, t)
 
@@ -47,7 +50,7 @@ class Integrals:
 #Численное решение
 q_list = []
 time_list = []
-file = open("q_time.txt", 'r')
+file = open("q_time_implicit.txt", 'r')
 for line in file.readlines():
     line = line.rstrip()
     s = line.split('  ')
@@ -58,14 +61,9 @@ for line in file.readlines():
 integ = Integrals()
 q_list_anal = []
 for time in time_list:
-    q = integ.count_q(time)
+    q = integ.count_q_d()
     q_list_anal.append(q)
 
-plt.plot(time_list, q_list)
-plt.plot(time_list, q_list_anal)
-plt.xlabel('time, days')
-plt.ylabel('Q')
-plt.show()
 
 file = open('q_time_anal.txt', 'w')
 for i in range(len(q_list_anal)):
@@ -74,36 +72,36 @@ file.close()
 
 #Аналитика для P
 #Численное решение
-p_list = []
-x_list = []
-file = open("pressure_10-days.txt", 'r')
-for line in file.readlines():
-    line = line.rstrip()
-    s = line.split(' ') #разделитель пробел
-
-    x_list.append(float(s[0]))
-    p_list.append(float(s[1]))
-
-#Аналитическое решение
-integ = Integrals()
-
-x = np.arange(0.108, 250, (250 - 0.108) / 1000)
-x = np.append(x, [250])
-p_list_anal = []
-
-for elem in x[:-1]:
-    p = integ.count_pressure(elem, time_list[9] * 86400.0)
-    p_list_anal.append(p)
-
-
-plt.plot(x_list, p_list)
-plt.plot(x[:-1] + 230, p_list_anal)
-plt.xlabel('x, meters')
-plt.ylabel('P, Pa')
-plt.show()
-
-file = open('pressure-10-days_anal.txt', 'w')
-for i in range(len(q_list_anal)):
-    file.write(str(x[:-1][i]) + '  ' + str(p_list_anal[i]) + '\n')
-file.close()
-
+# p_list = []
+# x_list = []
+# file = open("pressure_10-days.txt", 'r')
+# for line in file.readlines():
+#     line = line.rstrip()
+#     s = line.split(' ') #разделитель пробел
+#
+#     x_list.append(float(s[0]))
+#     p_list.append(float(s[1]))
+#
+# #Аналитическое решение
+# integ = Integrals()
+#
+# x = np.arange(0.108, 250, (250 - 0.108) / 1000)
+# x = np.append(x, [250])
+# p_list_anal = []
+#
+# for elem in x[:-1]:
+#     p = integ.count_pressure(elem, time_list[9] * 86400.0)
+#     p_list_anal.append(p)
+#
+#
+# plt.plot(x_list, p_list)
+# plt.plot(x[:-1] + 230, p_list_anal)
+# plt.xlabel('x, meters')
+# plt.ylabel('P, Pa')
+# plt.show()
+#
+# file = open('pressure-10-days_anal.txt', 'w')
+# for i in range(len(q_list_anal)):
+#     file.write(str(x[:-1][i]) + '  ' + str(p_list_anal[i]) + '\n')
+# file.close()
+#

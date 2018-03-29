@@ -267,6 +267,8 @@ if __name__ == "__main__":
                     ksi = solver.thomas_method_left_right(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus,
                                                        r_y_diff_plus, i)
 
+                #ksi = solver.count_ksi(layer, ksi, r, r_diff, r_x_diff_minus, r_x_diff_plus, r_y_diff_minus, r_y_diff_plus)
+
                 tolerance = solver.count_tolerance(ksi - ksi_k)
                 #print(tolerance)
 
@@ -280,7 +282,7 @@ if __name__ == "__main__":
 
             p_gr += delta
 
-        if counter % 1 == 0:
+        if counter == 10:
             name = 'graph_' + str(counter)
             fig = plt.figure()
             ax = fig.gca(projection='3d')
@@ -297,23 +299,24 @@ if __name__ == "__main__":
             plt.clf()
 
             x = np.arange(layer.x_0 + layer.h / 2, layer.x_N, layer.h)
-            file = open('pressure_10-days.txt', 'w')
+            file = open('pressure_10-days_implicit.txt', 'w')
             for j in range(len(p[0])):
                 file.write(str(x[j]) + ' ' + str(p[well.y_well][j]) + '\n')
             file.close()
 
-        # q = wi[45][45] * (p[45][45] - well.pressure_w)
-        # q_list.append(q)
-        # time_list.append(time)
+        q = wi[45][45] * (p[45][45] - well.pressure_w)
+        file = open('q_time_implicit.txt', 'w')
+        for i in range(len(q_list)):
+            file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
+        file.close()
+        q_list.append(q)
+        time_list.append(time)
         #
-        # print(time / 86400.0)
+        print(str(time / 86400.0) + ' days')
         time += solver.tau
         counter += 1
 
-    # file = open('q_time.txt', 'w')
-    # for i in range(len(q_list)):
-    #     file.write(str(time_list[i]) + '  ' + str(q_list[i]) + '\n')
-    # file.close()
+
     #
     # plt.plot(time_list, q_list)
     # plt.show()
