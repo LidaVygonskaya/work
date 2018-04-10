@@ -192,6 +192,7 @@ while time < solver.time_max:
     s_water_n = s_water.copy()
     s_oil_n = s_oil.copy()
     fi_list_n = [layer.count_fi((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]                     # 0.5 * (P_w+P_o)
+    ro_water_n = [layer.count_ro_water((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]
     P_cap = [pressure_cap_graph.get(s_water_n[0])] + layer.count_pcap(pressure_cap_graph, s_water_n[1:])
     #P_cap.append(pressure_cap_graph.get(s_water_n[-1]))
     print(len(P_cap))
@@ -229,7 +230,7 @@ while time < solver.time_max:
 
         for i in range(layer.N - 2):
             b_list.append(solver.count_b(ro_water, ro_oil, t_water_plus_list[i], t_oil_plus_list[i], i))
-            c_list.append(solver.count_c(ro_water, ro_oil, t_water_minus_list[i], t_oil_minus_list[i], i))
+            c_list.append(solver.count_c(ro_oil, ro_water, t_water_minus_list[i], t_oil_minus_list[i], i))
             c1_p = solver.count_c1_p(layer, solver, fi_list_n, s_water_n[1:-1], ro_water, i)
             c2_p = solver.count_c2_p(layer, solver, fi_list_n, s_water_n[1:-1], ro_oil, i)
             a_list.append(solver.count_a(ro_water, ro_oil, c1_p, c2_p, b_list[i], c_list[i], i))
@@ -251,7 +252,7 @@ while time < solver.time_max:
     for i in range(layer.N - 2):
         ro_water[i] = layer.count_ro_water(P_water[i + 1])
         fi_list[i] = layer.count_fi(P_oil[i + 1])
-        s_water[i + 1] = s_water_n[i + 1] + (solver.tau/(fi_list[i] * ro_water[i])) * (t_water_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i])) # + t_water_plus_list[i] * (P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_cap[i + 1] - P_cap[i]))
+        s_water[i + 1] = s_water_n[i + 1]*( fi_list_n[i] * ro_water_n[i])/(fi_list[i] * ro_water[i]) + (solver.tau/(fi_list[i] * ro_water[i])) * (t_water_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i])) # + t_water_plus_list[i] * (P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_cap[i + 1] - P_cap[i]))
         #s_oil[i + 1] = s_oil_n[i + 1] + (solver.tau/(fi_list[i] * ro_oil[i])) * (t_oil_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 2] - P_cap[i + 1]) + t_oil_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i] - P_cap[i + 1]))
 
     s_water[layer.N - 1] = s_water[layer.N - 2]
@@ -262,7 +263,10 @@ while time < solver.time_max:
         print("S_n+1 - S_n > 0.1")
         solver.tau = solver.tau / 2.0
         P_oil = P_oil_n.copy()
+        P_water = P_water_n.copy()
         s_water = s_water_n.copy()
+        s_oil = s_oil_n.copy()
+        ro_water = ro_water_n.copy()
         fi_list = fi_list_n.copy()
 
     else:
@@ -278,20 +282,20 @@ while time < solver.time_max:
         if (abs(time - 86400.0*125) < 1.e-16):
             x = np.arange(layer.x_0, layer.x_N, layer.h)
             x = np.append(x, layer.x_N)
-
-            plt.plot(x, P_water, 'bo', x, P_water, 'k')
-            plt.title(str(time / 86400.0) + 'days')
-            plt.xlabel('x')
-            plt.ylabel('P_water')
-            plt.show()
-            plt.plot(x, s_water, 'bo', x, s_water, 'k')
-            plt.title(str(time / 86400.0) + 'days')
-            plt.xlabel('x')
-            plt.ylabel('S_water')
-            plt.show()
+            #
+            # plt.plot(x, P_water, 'bo', x, P_water, 'k')
+            # plt.title(str(time / 86400.0) + 'days')
+            # plt.xlabel('x')
+            # plt.ylabel('P_water')
+            # plt.show()
+            # plt.plot(x, s_water, 'bo', x, s_water, 'k')
+            # plt.title(str(time / 86400.0) + 'days')
+            # plt.xlabel('x')
+            # plt.ylabel('S_water')
+            # plt.show()
             file = open('s(x)_count_125_days.txt', 'w')
             for i in range(len(x)):
-                file.write(str(x[i]) + '    ' + str(s_water[i]) + '\n')
+                file.write(str(x[i]) + ' ' + str(s_water[i]) + '\n')
             file.close()
 
         counter += 1

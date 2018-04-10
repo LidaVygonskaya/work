@@ -1,7 +1,7 @@
 class Layer:
     def __init__(self):
         self.atm = 101325.0
-        self.ro_oil_0 = 1000.0
+        self.ro_oil_0 = 900.0
         self.ro_water_0 = 1000.0
         self.P_01 = 80 * self.atm  # new
         self.P_02 = 80 * self.atm
@@ -50,7 +50,7 @@ class Layer:
 
     def count_ro_water_oil(self,_pressure_water, _pressure_oil):
         ro_water = self.ro_water_0 * (1.0 + self.c_f_water * (_pressure_water - self.P_02))
-        ro_oil = self.ro_oil_0 * (1.0 + self.c_f_oil* (_pressure_oil - self.P_02))
+        ro_oil = self.ro_oil_0 * (1.0 + self.c_f_oil * (_pressure_oil - self.P_02))
         return [ro_water, ro_oil]
 
     def count_ro_water(self, _pressure_water):

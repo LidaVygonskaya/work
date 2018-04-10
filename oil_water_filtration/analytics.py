@@ -7,13 +7,15 @@ import matplotlib.pyplot as plt
 class AnalHelper:
     def __init__(self):
         self.layer = Layer()
-        self.eta_0 = self.layer.mu_water / self.layer.mu_oil
+        self.eta_0 = (self.layer.mu_water / self.layer.mu_oil) * (self.layer.ro_oil_0 / self.layer.ro_water_0)
         self.L = self.layer.x_N
         self.delta_p = 50.0 * self.layer.atm
         self.time = 125.0 * 86400.0
 
     def count_s_c(self):
-        return math.sqrt(self.layer.mu_water / (self.layer.mu_water + self.layer.mu_oil))
+        #return math.sqrt(self.eta_0 / (self.eta_0 + self.layer.ro_oil_0))
+        return math.sqrt(self.eta_0 / (1.0 + self.eta_0))
+        #return math.sqrt(self.layer.mu_water / (self.layer.mu_water + self.layer.mu_oil))
 
     def count_f_der(self, s):
         return (2.0 * self.eta_0 * s * (1.0 - s)) / ((s ** 2.0 + self.eta_0 * (1.0 - s) ** 2.0) ** 2.0)
