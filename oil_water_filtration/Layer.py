@@ -1,3 +1,7 @@
+from oil_water_filtration.Oil import Oil
+from oil_water_filtration.Water import Water
+
+
 class Layer:
     def __init__(self):
         self.atm = 101325.0
@@ -9,21 +13,26 @@ class Layer:
         self.c_f_water = 0.0 #(10.0 ** (-4)) / self.atm
         self.c_r = (10.0 ** (-9)) / self.atm
         self.fi_0 = 0.2
+
         self.mu_oil = 10.0 * (10.0 ** (-3))
         self.mu_water = 10.0 ** (-3)
+        self.mu_oil_water = [self.mu_oil, self.mu_water]
+
         self.k = (9.868233 * (10 ** (-13))) * 10 ** (0)
         self.s_water_init = 0.0
         self.s_oil_init = 1 - self.s_water_init
         self.pressure_cap_init = [] #list
-        self.pressure_oil_init = 80.0 * self.atm
+        self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!
         self.pressure_water_init = []
+        self.components = [Oil(), Water()]
+        self.components_count = len(self.components)
         for m in range(len(self.pressure_cap_init[1: -1])):
             self.pressure_water_init.append(self.pressure_oil_init - self.pressure_cap_init[1: -1][m])
 
 
 
         #left side
-        self.pressure_water_left = 130.0 * self.atm
+        self.pressure_water_left = 130.0 * self.atm#!!!!!!!!!!!!!!!
         self.s_water_left = 1.0
         self.s_oil_left = 0.0
         #self.pressure_oil_left = self.pressure_water_left + self.pressure_cap_init[0]

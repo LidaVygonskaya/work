@@ -1,7 +1,10 @@
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+
+from oil_water_filtration.CellContainer import CellContainer
 from oil_water_filtration.Layer import Layer
+from oil_water_filtration.Solver import SolverSlau
 
 
 class Solver:
@@ -51,31 +54,46 @@ class Solver:
 
 
     @staticmethod
-    def count_b(ro_water, ro_oil, t_x_water_plus, t_x_oil_plus, index):
+    def count_b(solverSlau, ro_water, ro_oil, t_x_water_plus, t_x_oil_plus, pressure_oil, index):
         A = ro_oil[index] / ro_water[index]
         #A = 1.0
         b = A * t_x_water_plus + t_x_oil_plus
+        solverSlau.set_matrix_coefficients(index, index + 1, pressure_oil, b)
         return b
 
     @staticmethod
-    def count_c(ro_oil, ro_water, t_x_water_minus, t_x_oil_minus, index):
+    def count_c(solverSlau, ro_oil, ro_water, t_x_water_minus, t_x_oil_minus, pressure_oil,  index):
         A = ro_oil[index] / ro_water[index]
         #A = 1.0
         c = A * t_x_water_minus + t_x_oil_minus
+
+        solverSlau.set_matrix_coefficients(index, index - 1, pressure_oil, c)
+
+        # solverSlau.add_coefficient(index, index, -c)
+        # solverSlau.add_nevyaz(index, -c * pressure_oil[index])
+        # solverSlau.add_nevyaz(index, c * pressure_oil[index + 1])
+        # if index != 0:
+        #     solverSlau.add_coefficient(index, index - 1, c)
         return c
 
     @staticmethod
-    def count_a(ro_water, ro_oil, C1p, C2p, b, c, index):
+    def count_a(solverSlau, ro_water, ro_oil, C1p, C2p, pressure_oil, pressure_oil_n,  index):
         A = ro_oil[index] / ro_water[index]
         #A = 1.0
-        return -(b + c + A * C1p + C2p)
+        #a = -(b + c + A * C1p + C2p)
+        solverSlau.set_matrix_coeffitients_a_d(index, index, pressure_oil, pressure_oil_n, A * C1p + C2p)
+        #solverSlau.add_coefficient(index, index, -A * C1p + C2p)
+        #solverSlau.add_nevyaz(index, A * C1p + C2p * pressure_oil[index + 1])
+        return 0
 
     @staticmethod
-    def count_d(pressure_oil,pressure_oil_n, pressure_cap, ro_water, ro_oil, t_x_water_minus, t_x_water_plus,a, b, c, C1p, C2p, index):
+    def count_d(solverSlau, pressure_oil_n, pressure_cap, ro_water, ro_oil, t_x_water_minus, t_x_water_plus, C1p, C2p, index):
         A = ro_oil[index] / ro_water[index]
         #A = 1.0
-        r = b[index] * pressure_oil[index + 2] + c[index] * pressure_oil[index] + a[index] * pressure_oil[index + 1] - A * t_x_water_plus * (pressure_cap[index + 2] - pressure_cap[index + 1]) - A * t_x_water_minus * (pressure_cap[index] - pressure_cap[index + 1]) + (A * C1p + C2p) * pressure_oil_n[index + 1]
-        return -r
+        #r = b[index] * pressure_oil[index + 2] + c[index] * pressure_oil[index] + a[index] * pressure_oil[index + 1] - A * t_x_water_plus * (pressure_cap[index + 2] - pressure_cap[index + 1]) - A * t_x_water_minus * (pressure_cap[index] - pressure_cap[index + 1]) + (A * C1p + C2p) * pressure_oil_n[index + 1]
+        r_ost = - A * t_x_water_plus * (pressure_cap[index + 2] - pressure_cap[index + 1]) - A * t_x_water_minus * (pressure_cap[index] - pressure_cap[index + 1])# + (A * C1p + C2p) * pressure_oil_n[index + 1]
+        solverSlau.add_nevyaz(index, -r_ost)
+        return 0
 
     @staticmethod
     def count_norm(list_delta):
@@ -111,6 +129,18 @@ class Solver:
 
 layer = Layer()
 solver = Solver()
+
+cell_container = CellContainer(layer.N, layer)
+for cell in cell_container.get_cells():
+    index = cell_container.get_cells().index(cell)
+    if index == 0:
+        cell.cell_states[0].set_pressure_oil(layer.)
+    elif index == 
+
+
+
+
+
 pressure_cap_graph = {} #from graph {s_w: pressure_cap}
 file = open('Pcap(Sw).txt', 'r')
 for line in file.readlines():
@@ -184,6 +214,8 @@ time = solver.tau
 counter = 1
 s_water_from_oil = []
 
+solver_slau = SolverSlau(layer.N - 2)
+
 while time < solver.time_max:
 
     delta_list_k = [0.0] + [solver.delta_0 for i in range(layer.N - 2)] + [0.0]
@@ -205,7 +237,6 @@ while time < solver.time_max:
         #     P_oil = P_oil_n.copy()
         #     fi_list = fi_list_n.copy()
         #     delta_list_k = [0.0] + [solver.delta_0 for i in range(layer.N - 2)] + [0.0]
-
 
         a_list = []
         b_list = []
@@ -229,14 +260,30 @@ while time < solver.time_max:
             fi_list.append(layer.count_fi(P_oil[i]))
 
         for i in range(layer.N - 2):
-            b_list.append(solver.count_b(ro_water, ro_oil, t_water_plus_list[i], t_oil_plus_list[i], i))
-            c_list.append(solver.count_c(ro_oil, ro_water, t_water_minus_list[i], t_oil_minus_list[i], i))
+            #b_list.append(solver.count_b(solver_slau, ro_water, ro_oil, t_water_plus_list[i], t_oil_plus_list[i], i))
+            #c_list.append(solver.count_c(solver_slau, ro_oil, ro_water, t_water_minus_list[i], t_oil_minus_list[i], i))
             c1_p = solver.count_c1_p(layer, solver, fi_list_n, s_water_n[1:-1], ro_water, i)
             c2_p = solver.count_c2_p(layer, solver, fi_list_n, s_water_n[1:-1], ro_oil, i)
-            a_list.append(solver.count_a(ro_water, ro_oil, c1_p, c2_p, b_list[i], c_list[i], i))
-            d_list.append(solver.count_d(P_oil, P_oil_n, P_cap, ro_water, ro_oil, t_water_minus_list[i], t_water_plus_list[i], a_list, b_list, c_list, c1_p, c2_p, i))
+            #a_list.append(solver.count_a(solver_slau, ro_water, ro_oil, c1_p, c2_p, b_list[i], c_list[i], i))
+            #d_list.append(solver.count_d(solver_slau, P_oil, P_oil_n, P_cap, ro_water, ro_oil, t_water_minus_list[i], t_water_plus_list[i], a_list, b_list, c_list, c1_p, c2_p, i))
 
-        delta_list_k = solver.thomas_method(a_list, b_list, c_list, d_list, 0.0, 0.0)
+
+        #count coefficients with solverSlau
+
+        for i in range(solver_slau.e_count):
+            solver.count_b(solver_slau, ro_water, ro_oil, t_water_plus_list[i], t_oil_plus_list[i],P_oil, i)
+            solver.count_c(solver_slau, ro_oil, ro_water, t_water_minus_list[i], t_oil_minus_list[i], P_oil, i)
+            solver.count_a(solver_slau, ro_water, ro_oil, c1_p, c2_p, P_oil, P_oil_n, i)
+            solver.count_d(solver_slau, P_oil_n, P_cap, ro_water, ro_oil, t_water_minus_list[i], t_water_plus_list[i], c1_p, c2_p, i)
+
+
+
+
+            #solver_slau.nevyaz_vector[i] = d_list[i]
+
+        #delta_list_k = solver.thomas_method(a_list, b_list, c_list, d_list, 0.0, 0.0)
+        solver_slau.solve_thomas_method(0.0, 0.0)
+        delta_list_k_new = solver_slau.get_result()
 
         for i in range(1, layer.N - 1):
             P_oil[i] = P_oil[i] + delta_list_k[i]
