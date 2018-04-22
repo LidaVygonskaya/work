@@ -33,13 +33,14 @@ class Layer:
 
         #left side
         self.pressure_water_left = 130.0 * self.atm#!!!!!!!!!!!!!!!
+        self.pressure_oil_left = 130.0 * self.atm
         self.s_water_left = 1.0
         self.s_oil_left = 0.0
         #self.pressure_oil_left = self.pressure_water_left + self.pressure_cap_init[0]
 
         #right side
         self.pressure_water_right = self.pressure_water_init
-        self.pressure_oil_right = self.pressure_oil_init
+        self.pressure_oil_right = 80.0 * self.atm
         self.s_oil_right = self.s_oil_init
         self.s_water_right = self.s_water_init
 

@@ -131,14 +131,7 @@ layer = Layer()
 solver = Solver()
 
 cell_container = CellContainer(layer.N, layer)
-for cell in cell_container.get_cells():
-    index = cell_container.get_cells().index(cell)
-    if index == 0:
-        cell.cell_states[0].set_pressure_oil(layer.)
-    elif index == 
-
-
-
+cell_container.initialize_cells()
 
 
 pressure_cap_graph = {} #from graph {s_w: pressure_cap}
@@ -152,19 +145,17 @@ for line in file.readlines():
 
 #initialize S_water
 s_water = []
-#s_water1 = np.matrix((1, layer.N))
 
 for i in range(layer.N - 2):
     s_water.append(layer.s_water_init)
-    #s_water1 = np.append(s_water1, layer.s_water_init)
+
 #initialize S_oil
 s_oil = []
-#s_oil1 = np.matrix((1, layer.N))
+
+
 for i in range(layer.N - 2):
     s_oil.append(1 - layer.s_water_init)
-    #np.append(s_oil1, 1 - layer.s_water_init)
 
-#initialize Oil pressure without gr
 P_oil = []
 #P_oil1 = np.matrix((1, layer.N))
 for j in range(layer.N - 2):
@@ -230,18 +221,14 @@ while time < solver.time_max:
     print(len(P_cap))
 
     while solver.count_norm(delta_list_k) > solver.delta_max:
-        #print(solver.count_norm(delta_list_k))
+        print(solver.count_norm(delta_list_k))
         # if solver.count_norm([delta_list_k[i] / P_oil_n[i] for i in range(len(delta_list_k))]) > 0.1:
         #     print("P_n+1 - P_n > 0.1")
         #     solver.tau = solver.tau / 2.0
         #     P_oil = P_oil_n.copy()
         #     fi_list = fi_list_n.copy()
         #     delta_list_k = [0.0] + [solver.delta_0 for i in range(layer.N - 2)] + [0.0]
-
-        a_list = []
-        b_list = []
-        c_list = []
-        d_list = []
+        solver_slau.set_zero()
         t_water_minus_list = []
         t_water_plus_list = []
         t_oil_minus_list = []
@@ -283,11 +270,13 @@ while time < solver.time_max:
 
         #delta_list_k = solver.thomas_method(a_list, b_list, c_list, d_list, 0.0, 0.0)
         solver_slau.solve_thomas_method(0.0, 0.0)
-        delta_list_k_new = solver_slau.get_result()
+        delta_list_k = solver_slau.get_result()
+        solver_slau.clear_result()
 
         for i in range(1, layer.N - 1):
             P_oil[i] = P_oil[i] + delta_list_k[i]
             P_water[i] = P_oil[i] - P_cap[i]
+
 
     # Recalculate water density and transmissibilities
     t_water_minus_list = []
