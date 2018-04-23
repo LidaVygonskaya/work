@@ -23,11 +23,11 @@ class Layer:
         self.s_oil_init = 1 - self.s_water_init
         self.pressure_cap_init = [] #list
         self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!
-        self.pressure_water_init = []
+        self.pressure_water_init = 80 * self.atm
         self.components = [Oil(), Water()]
         self.components_count = len(self.components)
-        for m in range(len(self.pressure_cap_init[1: -1])):
-            self.pressure_water_init.append(self.pressure_oil_init - self.pressure_cap_init[1: -1][m])
+        #for m in range(len(self.pressure_cap_init[1: -1])):
+        #    self.pressure_water_init.append(self.pressure_oil_init - self.pressure_cap_init[1: -1][m])
 
 
 
@@ -39,7 +39,7 @@ class Layer:
         #self.pressure_oil_left = self.pressure_water_left + self.pressure_cap_init[0]
 
         #right side
-        self.pressure_water_right = self.pressure_water_init
+        self.pressure_water_right = 80.0 * self.atm
         self.pressure_oil_right = 80.0 * self.atm
         self.s_oil_right = self.s_oil_init
         self.s_water_right = self.s_water_init

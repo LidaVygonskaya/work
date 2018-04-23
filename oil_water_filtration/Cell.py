@@ -31,9 +31,10 @@ class Cell:
         return self.cell_states[0]
 
     def get_cell_state_n_plus(self):
-        return self.cell_states[1]
+            return self.cell_states[1]
 
-
+    def get_cell_states(self):
+        return self.cell_states
 
 
 

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from oil_water_filtration.CellContainer import CellContainer
+from oil_water_filtration.Flow import Flow
 from oil_water_filtration.Layer import Layer
 from oil_water_filtration.Solver import SolverSlau
 
@@ -100,38 +101,12 @@ class Solver:
         list_delta_abs = [math.fabs(elem) for elem in list_delta[1:-1]]
         return max(list_delta_abs)
 
-    @staticmethod
-    def thomas_method(list_a, list_b, list_c, list_d, P0, PN):
-        w_1 = list_a[0]
-        q_list = []
-        w_list = [w_1]
-        for j in range(1, len(list_a)):
-            q = list_b[j - 1] / w_list[j - 1]
-            q_list.append(q)
-            w = list_a[j] - list_c[j] * q_list[j - 1]
-            w_list.append(w)
-
-        g_list = [list_d[0] / w_list[0]]
-        for j in range(1, len(list_d)):
-            g = (list_d[j] - list_c[j] * g_list[j - 1]) / w_list[j]
-            g_list.append(g)
-
-        list_P = [g_list[-1]]
-        for j in range(len(g_list) - 2, -1, -1):
-            P = g_list[j] - q_list[j] * list_P[-1]
-            list_P.append(P)
-        # Add usloviya na granitsah
-        list_P.append(P0)
-        list_P.reverse()
-        list_P.append(PN)
-        return list_P
-
 
 layer = Layer()
 solver = Solver()
-
 cell_container = CellContainer(layer.N, layer)
 cell_container.initialize_cells()
+
 
 
 pressure_cap_graph = {} #from graph {s_w: pressure_cap}
@@ -210,25 +185,27 @@ solver_slau = SolverSlau(layer.N - 2)
 while time < solver.time_max:
 
     delta_list_k = [0.0] + [solver.delta_0 for i in range(layer.N - 2)] + [0.0]
+
+    #same
     P_oil_n = P_oil.copy()
     P_water_n = P_water.copy()
     s_water_n = s_water.copy()
     s_oil_n = s_oil.copy()
     fi_list_n = [layer.count_fi((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]                     # 0.5 * (P_w+P_o)
     ro_water_n = [layer.count_ro_water((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]
+    #same
+
     P_cap = [pressure_cap_graph.get(s_water_n[0])] + layer.count_pcap(pressure_cap_graph, s_water_n[1:])
-    #P_cap.append(pressure_cap_graph.get(s_water_n[-1]))
-    print(len(P_cap))
+
+    #new
+    for cell in cell_container.get_cells():
+        cell.get_cell_state_n().set_equals_to(cell.get_cell_state_n_plus())
+    #new
 
     while solver.count_norm(delta_list_k) > solver.delta_max:
         print(solver.count_norm(delta_list_k))
-        # if solver.count_norm([delta_list_k[i] / P_oil_n[i] for i in range(len(delta_list_k))]) > 0.1:
-        #     print("P_n+1 - P_n > 0.1")
-        #     solver.tau = solver.tau / 2.0
-        #     P_oil = P_oil_n.copy()
-        #     fi_list = fi_list_n.copy()
-        #     delta_list_k = [0.0] + [solver.delta_0 for i in range(layer.N - 2)] + [0.0]
         solver_slau.set_zero()
+
         t_water_minus_list = []
         t_water_plus_list = []
         t_oil_minus_list = []
@@ -236,6 +213,18 @@ while time < solver.time_max:
         ro_water = []
         ro_oil = []
         fi_list = []
+
+        #new
+        t_new_oil = []
+        t_new_water = []
+
+        for i in range(cell_container.get_len() - 1):
+            cells = cell_container.get_cells()
+            flow = Flow(cells[i], cells[i + 1])
+            t_new_oil.append(flow.count_cells_flows()[0])
+            t_new_water.append(flow.count_cells_flows()[1])
+
+
 
         for i in range(1, layer.N - 1):
             t_water_minus_list.append(solver.count_t_water_minus(layer, P_water, s_water, i))
@@ -288,7 +277,7 @@ while time < solver.time_max:
     for i in range(layer.N - 2):
         ro_water[i] = layer.count_ro_water(P_water[i + 1])
         fi_list[i] = layer.count_fi(P_oil[i + 1])
-        s_water[i + 1] = s_water_n[i + 1]*( fi_list_n[i] * ro_water_n[i])/(fi_list[i] * ro_water[i]) + (solver.tau/(fi_list[i] * ro_water[i])) * (t_water_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i])) # + t_water_plus_list[i] * (P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_cap[i + 1] - P_cap[i]))
+        s_water[i + 1] = s_water_n[i + 1] * (fi_list_n[i] * ro_water_n[i])/(fi_list[i] * ro_water[i]) + (solver.tau/(fi_list[i] * ro_water[i])) * (t_water_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i])) # + t_water_plus_list[i] * (P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_cap[i + 1] - P_cap[i]))
         #s_oil[i + 1] = s_oil_n[i + 1] + (solver.tau/(fi_list[i] * ro_oil[i])) * (t_oil_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 2] - P_cap[i + 1]) + t_oil_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i] - P_cap[i + 1]))
 
     s_water[layer.N - 1] = s_water[layer.N - 2]
@@ -319,11 +308,11 @@ while time < solver.time_max:
             x = np.arange(layer.x_0, layer.x_N, layer.h)
             x = np.append(x, layer.x_N)
             #
-            # plt.plot(x, P_water, 'bo', x, P_water, 'k')
-            # plt.title(str(time / 86400.0) + 'days')
-            # plt.xlabel('x')
-            # plt.ylabel('P_water')
-            # plt.show()
+            plt.plot(x, P_water, 'bo', x, P_water, 'k')
+            plt.title(str(time / 86400.0) + 'days')
+            plt.xlabel('x')
+            plt.ylabel('P_water')
+            plt.show()
             # plt.plot(x, s_water, 'bo', x, s_water, 'k')
             # plt.title(str(time / 86400.0) + 'days')
             # plt.xlabel('x')
