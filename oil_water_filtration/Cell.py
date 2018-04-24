@@ -1,6 +1,7 @@
 from oil_water_filtration.CellState import CellState
 from oil_water_filtration.Layer import Layer
 
+
 class Cell:
     def __init__(self, x_coordinate, layer):
         self.layer = layer
