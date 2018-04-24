@@ -25,6 +25,7 @@ class Layer:
         self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!
         self.pressure_water_init = 80 * self.atm
         self.components = [Oil(), Water()]
+
         self.components_count = len(self.components)
         #for m in range(len(self.pressure_cap_init[1: -1])):
         #    self.pressure_water_init.append(self.pressure_oil_init - self.pressure_cap_init[1: -1][m])
@@ -52,6 +53,14 @@ class Layer:
         self.z = 10.0
         self.V_ij = self.h ** 2.0 * self.z
 
+
+    def get_water_component(self):
+        return self.components[1]
+
+    def get_oil_component(self):
+        return self.components[0]
+
+
     @staticmethod
     def count_k_r(_s_water):
         k_r_water = _s_water ** 2.0
@@ -72,6 +81,23 @@ class Layer:
     def count_fi(self, pressure_oil):
         return self.fi_0 * (1.0 + self.c_r * (pressure_oil - self.P_01))
 
+    def count_pcap_graph(self):
+        pressure_cap_graph = {}  # from graph {s_w: pressure_cap}
+        file = open('Pcap(Sw).txt', 'r')
+        for line in file.readlines():
+            line = line.rstrip()
+            s = line.split('\t')
+            pressure_cap_graph.update({float(s[0]): float(s[1]) * self.atm})
+        return pressure_cap_graph
+
+    def count_pressure_cap(self, p_cap_graph, s_water):
+        s_w_graph = list(p_cap_graph.keys())
+        for i in range(len(s_w_graph)):
+            if s_water <= s_w_graph[i]:
+                p_cap = p_cap_graph.get(s_w_graph[i - 1]) + (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1])) / (s_w_graph[i] - s_w_graph[i - 1]) * (s_water - s_w_graph[i - 1])
+                break
+        return p_cap
+
     @staticmethod
     def count_pcap(p_cap_graph, s_water_list):
         p_cap_list = []
@@ -79,11 +105,9 @@ class Layer:
         for i in range(len(s_water_list)):
             for j in range(len(s_w_graph)):
                 if s_water_list[i] <= s_w_graph[j]:
-                    p_cap = p_cap_graph.get(s_w_graph[j - 1]) + (
-                                p_cap_graph.get(s_w_graph[j]) - p_cap_graph.get(
-                            s_w_graph[j - 1])) / (s_w_graph[j] - s_w_graph[j - 1]) * (
-                                        s_water_list[i] - s_w_graph[j - 1])
-                    #p_cap_list.append(p_cap)
+                    p_cap = p_cap_graph.get(s_w_graph[j - 1]) + (p_cap_graph.get(s_w_graph[j]) - p_cap_graph.get(s_w_graph[j - 1])) / (s_w_graph[j] - s_w_graph[j - 1]) * (s_water_list[i] - s_w_graph[j - 1])
+                    # p_cap_list.append(p_cap)
                     p_cap_list.append(0.0)
                     break
         return p_cap_list
+

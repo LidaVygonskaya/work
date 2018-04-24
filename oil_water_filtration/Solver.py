@@ -39,7 +39,6 @@ class SolverSlau():
             self.add_nevyaz(i, coefficient * pressure_oil[i + 1])
             self.add_nevyaz(i, -coefficient * pressure_oil_n[i + 1])
 
-
     def solve_thomas_method(self, left_gr, right_gr):
         w_1 = self.coefficient_matrix[0, 0]
         q_list = []
