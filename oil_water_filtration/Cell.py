@@ -28,7 +28,14 @@ class Cell:
     def get_mu_oil_water(self):
         return self.layer.mu_oil_water
 
+    def get_cell_state_n(self):
+        return self.cell_states[0]
 
+    def get_cell_state_n_plus(self):
+            return self.cell_states[1]
+
+    def get_cell_states(self):
+        return self.cell_states
 
 
 
