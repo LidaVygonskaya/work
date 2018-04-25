@@ -32,6 +32,10 @@ class Cell:
         return self.cell_states[0]
 
     def get_cell_state_n_plus(self):
+            """
+
+            :rtype: object
+            """
             return self.cell_states[1]
 
     def get_cell_states(self):

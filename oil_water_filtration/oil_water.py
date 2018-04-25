@@ -162,7 +162,7 @@ s_oil.append(1 - layer.s_water_right)
 #P_cap
 P_cap = [pressure_cap_graph.get(s_water[0])] + P_cap
 P_cap.append(pressure_cap_graph.get(s_water[-1]))
-print(len(P_cap))
+
 
 #P_water
 P_water = [layer.pressure_water_left] + P_water
@@ -202,7 +202,6 @@ while time < solver.time_max:
     #new
 
     while solver.count_norm(delta_list_k) > solver.delta_max:
-        print(solver.count_norm(delta_list_k))
         solver_slau.set_zero()
 
         t_water_minus_list = []
@@ -221,19 +220,18 @@ while time < solver.time_max:
             cells = cell_container.get_cells()
             cell = cells[i]
             cell_state_n_plus = cell.get_cell_state_n_plus()
-            flow = Flow(cells[i], cells[i + 1])
-            t_new_oil.append(flow.count_cells_flows()[0])
-            t_new_water.append(flow.count_cells_flows()[1])
-
             for component in cell.layer.components:
                 component_index = cell.layer.components.index(component)
                 ro = component.count_ro(cell_state_n_plus.get_components_pressure()[component_index])
+                k_r = component.count_k_r(cell_state_n_plus.get_components_saturation()[component_index])
                 cell_state_n_plus.set_ro(ro, component_index)
-            cell_state_n_plus.set_fi(cell_state_n_plus.get_pressure_oil())
+                cell_state_n_plus.set_k_r(k_r, component_index)
 
-
-
-
+            fi = cell.layer.count_fi(cell_state_n_plus.get_pressure_oil())
+            cell_state_n_plus.set_fi(fi)
+            flow = Flow(cells[i], cells[i + 1])
+            t_new_oil.append(flow.count_cells_flows()[0])
+            t_new_water.append(flow.count_cells_flows()[1])
 
         for i in range(1, layer.N - 1):
             t_water_minus_list.append(solver.count_t_water_minus(layer, P_water, s_water, i))
@@ -275,9 +273,6 @@ while time < solver.time_max:
             state.set_pressure_water(state.get_pressure_oil() - P_cap[i])
 
 
-
-
-
     # Recalculate water density and transmissibilities
     #transmissibilities same
     t_water_minus_list = []
@@ -286,7 +281,22 @@ while time < solver.time_max:
         t_water_minus_list.append(solver.count_t_water_minus(layer, P_water, s_water, i))
         t_water_plus_list.append(solver.count_t_water_plus(layer, P_water, s_water, i))
 
-    #recount transmissibilities new the same
+
+    #recount_density water
+    for i in range(1, cell_container.get_len() - 1):
+        cells = cell_container.get_cells()
+        cell = cells[i]
+        cell_state = cell.get_cell_state_n_plus()
+        for component in cell.layer.components:
+            component_index = cell.layer.components.index(component)
+            ro = component.count_ro(cell_state_n_plus.get_components_pressure()[component_index])
+            k_r = component.count_k_r(cell_state_n_plus.get_components_saturation()[component_index])
+            cell_state_n_plus.set_ro(ro, component_index)
+            cell_state_n_plus.set_k_r(k_r, component_index)
+        fi = cell.layer.count_fi(cell_state.get_pressure_oil())
+
+
+    # recount transmissibilities new the same
     t_new_water = []
     for i in range(cell_container.get_len() - 1):
         cells = cell_container.get_cells()
@@ -295,17 +305,6 @@ while time < solver.time_max:
 
     t_water_minus_list_new = [0.0] + t_new_water[:-1] + [0.0]
     t_water_plus_list_new = [0.0] + t_new_water[1:] + [0.0]
-
-
-    #recount_density water
-    for i in range(1, cell_container.get_len() - 1):
-        cells = cell_container.get_cells()
-        cell = cells[i]
-        cell_state = cell.get_cell_state_n_plus()
-        ro = cell.layer.get_water_component().count_ro(cell_state.get_pressure_water())
-        fi = cell.layer.count_fi(cell_state.get_pressure_oil())
-        cell_state.set_ro_water(ro)
-        cell_state.set_fi(fi)
 
 
     #recount density fi and s
@@ -331,10 +330,10 @@ while time < solver.time_max:
         coeff2 = t_water_plus_list_new[i] * (cell_state_n_plus_i_plus.get_pressure_oil() - cell_state_n_plus_i.get_pressure_oil() + P_cap[i] - P_cap[i + 1]) + t_water_minus_list_new[i] * (cell_state_n_plus_i_minus.get_pressure_oil() - cell_state_n_plus_i.get_pressure_oil() + P_cap[i] - P_cap[i - 1])#!!!!!!!!!!!!!!!!!!!!!!add to t_water
         s_water_new = cell_state_n_i.get_s_water() * coeff1 + (solver.tau / (cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_water())) * coeff2
         cell_state_n_plus_i.set_s_water(s_water_new)
+        cell_state_n_plus_i.set_s_oil(1.0 - s_water_new)
 
     #cells = cell_container.get_cells()
     #cells[-2].get_state_n = cells[-1].
-
 
     if solver.count_norm([s_water[i] - s_water_n[i] for i in range(len(s_water))]) > 0.01:
         print("S_n+1 - S_n > 0.1")
@@ -357,7 +356,7 @@ while time < solver.time_max:
         if 125 * 86400.0 - time - solver.tau <= 0:
             solver.tau = 125 * 86400.0 - time #- solver.tau
 
-        if (abs(time - 86400.0*125) < 1.e-16):
+        if abs(time - 86400.0 * 125) < 1.e-16:
             x = np.arange(layer.x_0, layer.x_N, layer.h)
             x = np.append(x, layer.x_N)
             #
