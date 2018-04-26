@@ -111,3 +111,16 @@ class Layer:
                     break
         return p_cap_list
 
+    @staticmethod
+    def count_c1_p_new(solver, cell):
+        state_n = cell.get_cell_state_n()
+        state_n_plus = cell.get_cell_state_n_plus()
+        cell_layer = cell.layer
+        return ((state_n.get_fi() * state_n.get_s_water() * cell_layer.ro_water_0 * cell_layer.c_f_water) + (state_n.get_s_water() * state_n_plus.get_ro_water() * cell_layer.c_r * cell_layer.fi_0)) / solver.tau
+
+    @staticmethod
+    def count_c2_p_new(solver, cell):
+        state_n = cell.get_cell_state_n()
+        state_n_plus = cell.get_cell_state_n_plus()
+        cell_layer = cell.layer
+        return ((1.0 - state_n.get_s_water()) * (state_n.get_fi() * cell_layer.ro_oil_0 * cell_layer.c_f_oil + cell_layer.c_r * cell_layer.fi_0 * state_n_plus.get_ro_oil())) / solver.tau

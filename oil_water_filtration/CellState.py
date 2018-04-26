@@ -1,10 +1,12 @@
 class CellState:
     def __init__(self):
         self.pressure_oil_water = [0.0, 0.0]
-        self.pressure_cap = [0.0]
+        self.pressure_cap = 0.0
         self.s_oil_water = [0.0, 0.0]
         self.ro_oil_water = [0.0, 0.0]
         self.k_r_oil_water = [0.0, 0.0]
+        self.c1_p = 0.0
+        self.c2_p = 0.0
         self.fi = 0.0
 
     #Getters
@@ -13,6 +15,9 @@ class CellState:
 
     def get_pressure_water(self):
         return self.pressure_oil_water[1]
+
+    def get_pressure_cap(self):
+        return self.pressure_cap
 
     def get_components_pressure(self):
         return self.pressure_oil_water
@@ -50,6 +55,12 @@ class CellState:
     def get_pressure_cap(self):
         return self.pressure_cap
 
+    def get_c1_p(self):
+        return self.c1_p
+
+    def get_c2_p(self):
+        return self.c2_p
+
 
     #Setters
     def set_pressure_oil(self, pressure_oil):
@@ -82,13 +93,11 @@ class CellState:
     def set_pressure_cap(self, pressure_cap):
         self.pressure_cap = pressure_cap
 
-    #for adding delta
-    def add_pressure_oil(self, delta_pressure):
-        self.get_pressure_oil() + delta_pressure
+    def set_c1_p(self, c1_p):
+        self.c1_p = c1_p
 
-
-
-
+    def set_c2_p(self, c2_p):
+        self.c2_p = c2_p
 
 
     #Set n to n plus 1
@@ -102,6 +111,8 @@ class CellState:
         self.k_r_oil_water[0] = cell_state_new.k_r_oil_water[0]
         self.k_r_oil_water[1] = cell_state_new.k_r_oil_water[1]
         self.fi = cell_state_new.fi
+        self.c1_p = cell_state_new.c1_p
+        self.c2_p = cell_state_new.c2_p
 
 
 

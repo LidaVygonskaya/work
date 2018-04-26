@@ -3,13 +3,17 @@ from oil_water_filtration.Layer import Layer
 
 
 class Cell:
-    def __init__(self, x_coordinate, layer):
+    def __init__(self, x_coordinate, layer, eq_index):
         self.layer = layer
         self.x_coordinate = x_coordinate
         self.width = self.layer.h
         self.cell_states = [CellState(), CellState()]#n, n + 1 layers
+        self.eq_index = [eq_index, -1]
 
     #Cell constant parameters
+    def get_eq_index(self):
+        return self.eq_index
+
     def get_k(self):
         return self.layer.k
 
@@ -32,11 +36,7 @@ class Cell:
         return self.cell_states[0]
 
     def get_cell_state_n_plus(self):
-            """
-
-            :rtype: object
-            """
-            return self.cell_states[1]
+        return self.cell_states[1]
 
     def get_cell_states(self):
         return self.cell_states

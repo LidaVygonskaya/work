@@ -22,11 +22,13 @@ class SolverSlau():
     def add_nevyaz(self, i, coefficient):
         self.nevyaz_vector[i] += coefficient
 
-    def set_matrix_coefficients(self, i, j, pressure_oil, coefficient):
+    def set_matrix_coefficients(self, i, j, pressure_oil_i, pressure_oil_j, coefficient):
         if i < self.e_count and i >= 0:
             self.add_coefficient(i, i, -coefficient)
-            self.add_nevyaz(i, coefficient * pressure_oil[i + 1])
-            self.add_nevyaz(i, -coefficient * pressure_oil[j + 1])
+            # self.add_nevyaz(i, coefficient * pressure_oil[i + 1])
+            # self.add_nevyaz(i, -coefficient * pressure_oil[j + 1])
+            self.add_nevyaz(i, coefficient * pressure_oil_i)
+            self.add_nevyaz(i, -coefficient * pressure_oil_j)
 
             if j < self.e_count and j >= 0:
                 self.add_coefficient(i, j, coefficient)
@@ -36,8 +38,8 @@ class SolverSlau():
         #A_c1_p
         if i < self.e_count and i >= 0:
             self.add_coefficient(i, i, -coefficient)
-            self.add_nevyaz(i, coefficient * pressure_oil[i + 1])
-            self.add_nevyaz(i, -coefficient * pressure_oil_n[i + 1])
+            self.add_nevyaz(i, coefficient * pressure_oil)
+            self.add_nevyaz(i, -coefficient * pressure_oil_n)
 
     def solve_thomas_method(self, left_gr, right_gr):
         w_1 = self.coefficient_matrix[0, 0]

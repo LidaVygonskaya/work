@@ -6,7 +6,7 @@ from oil_water_filtration.CellContainer import CellContainer
 from oil_water_filtration.Flow import Flow
 from oil_water_filtration.Layer import Layer
 from oil_water_filtration.Solver import SolverSlau
-
+from oil_water_filtration.OilWater import OilWater
 
 class Solver:
     def __init__(self):
@@ -18,6 +18,7 @@ class Solver:
         self.time_max = 365.25 * 1 * 86400 #self.tau
 
     @staticmethod
+    #del
     def count_t_water_minus(layer,  pressure_water, s_water, index):
         ro_wat = layer.count_ro_water(max(pressure_water[index - 1], pressure_water[index]))
         k_r_water = layer.count_k_r(max(s_water[index - 1], s_water[index]))[0]
@@ -25,6 +26,7 @@ class Solver:
         return t_x_water_minus
 
     @staticmethod
+    #del
     def count_t_water_plus(layer, pressure_water, s_water, index):
         ro_wat = layer.count_ro_water(max(pressure_water[index], pressure_water[index + 1]))
         k_r_water = layer.count_k_r(max(s_water[index], s_water[index + 1]))[0]
@@ -49,50 +51,55 @@ class Solver:
     def count_c1_p(layer, solver, fi_n, s_water_n, ro_water, index):
         return ((fi_n[index] * s_water_n[index] * layer.ro_water_0 * layer.c_f_water) + (s_water_n[index] * ro_water[index] * layer.c_r * layer.fi_0)) / solver.tau
 
+    #Считаем во всех клетках кроме граничных
+
+
     @staticmethod
     def count_c2_p(layer, solver,  fi_n, s_water_n, ro_oil, index):
         return ((1.0 - s_water_n[index]) * (fi_n[index] * layer.ro_oil_0 * layer.c_f_oil + layer.c_r * layer.fi_0 * ro_oil[index])) / solver.tau
 
 
     @staticmethod
-    def count_b(solverSlau, ro_water, ro_oil, t_x_water_plus, t_x_oil_plus, pressure_oil, index):
-        A = ro_oil[index] / ro_water[index]
-        #A = 1.0
-        b = A * t_x_water_plus + t_x_oil_plus
-        solverSlau.set_matrix_coefficients(index, index + 1, pressure_oil, b)
+    def count_b(solverSlau, cell_flow):
+        left_cell = cell_flow.get_left_cell()
+        right_cell = cell_flow.get_right_cell()
+        #_cell = cell_flow.get_left_cell()
+        state_n_plus = left_cell.get_cell_state_n_plus()
+        A = state_n_plus.get_ro_oil() / state_n_plus.get_ro_water()
+        #b = A * t_x_water_plus + t_x_oil_plus
+        b = A * cell_flow.t_oil_water[1] + cell_flow.t_oil_water[0]
+        solverSlau.set_matrix_coefficients(cell_flow.get_left_cell().get_eq_index()[0], cell_flow.get_right_cell().get_eq_index()[0], left_cell.get_cell_state_n_plus().get_pressure_oil(), right_cell.get_cell_state_n_plus().get_pressure_oil(), b)
         return b
 
     @staticmethod
-    def count_c(solverSlau, ro_oil, ro_water, t_x_water_minus, t_x_oil_minus, pressure_oil,  index):
-        A = ro_oil[index] / ro_water[index]
-        #A = 1.0
-        c = A * t_x_water_minus + t_x_oil_minus
-
-        solverSlau.set_matrix_coefficients(index, index - 1, pressure_oil, c)
-
-        # solverSlau.add_coefficient(index, index, -c)
-        # solverSlau.add_nevyaz(index, -c * pressure_oil[index])
-        # solverSlau.add_nevyaz(index, c * pressure_oil[index + 1])
-        # if index != 0:
-        #     solverSlau.add_coefficient(index, index - 1, c)
+    def count_c(solverSlau, cell_flow):
+        left_cell = cell_flow.get_left_cell()
+        right_cell = cell_flow.get_right_cell()
+        #_cell = cell_flow.get_right_cell()
+        state_n_plus = right_cell.get_cell_state_n_plus()
+        A = state_n_plus.get_ro_oil() / state_n_plus.get_ro_water()
+        #c = A * t_x_water_minus + t_x_oil_minus
+        c = A * cell_flow.t_oil_water[1] + cell_flow.t_oil_water[0]
+        r_ost = - A * cell_flow.t_oil_water[1] * (left_cell.get_cell_state_n_plus().get_pressure_cap() - right_cell.get_cell_state_n_plus().get_pressure_cap())
+        solverSlau.add_nevyaz(index, -r_ost)
+        #solverSlau.set_matrix_coefficients(index, index - 1, state_n_plus.get_pressure_oil(), c)
+        solverSlau.set_matrix_coefficients(cell_flow.get_right_cell().get_eq_index()[0], cell_flow.get_left_cell().get_eq_index()[0], right_cell.get_cell_state_n_plus().get_pressure_oil(), left_cell.get_cell_state_n_plus().get_pressure_oil(), c)
         return c
 
     @staticmethod
-    def count_a(solverSlau, ro_water, ro_oil, C1p, C2p, pressure_oil, pressure_oil_n,  index):
-        A = ro_oil[index] / ro_water[index]
-        #A = 1.0
-        #a = -(b + c + A * C1p + C2p)
-        solverSlau.set_matrix_coeffitients_a_d(index, index, pressure_oil, pressure_oil_n, A * C1p + C2p)
-        #solverSlau.add_coefficient(index, index, -A * C1p + C2p)
-        #solverSlau.add_nevyaz(index, A * C1p + C2p * pressure_oil[index + 1])
-        return 0
+    def count_a(solverSlau, cell):
+        #A = ro_oil[index] / ro_water[index]
+        state_n = cell.get_cell_state_n()
+        state_n_plus = cell.get_cell_state_n_plus()
+        A = state_n_plus.get_ro_oil() / state_n_plus.get_ro_water()
+        solverSlau.set_matrix_coeffitients_a_d(cell.get_eq_index()[0], cell.get_eq_index()[0], state_n_plus.get_pressure_oil(), state_n.get_pressure_oil(), A * state_n_plus.get_c1_p() + state_n_plus.get_c2_p())
+
 
     @staticmethod
-    def count_d(solverSlau, pressure_oil_n, pressure_cap, ro_water, ro_oil, t_x_water_minus, t_x_water_plus, C1p, C2p, index):
-        A = ro_oil[index] / ro_water[index]
-        #A = 1.0
-        #r = b[index] * pressure_oil[index + 2] + c[index] * pressure_oil[index] + a[index] * pressure_oil[index + 1] - A * t_x_water_plus * (pressure_cap[index + 2] - pressure_cap[index + 1]) - A * t_x_water_minus * (pressure_cap[index] - pressure_cap[index + 1]) + (A * C1p + C2p) * pressure_oil_n[index + 1]
-        r_ost = - A * t_x_water_plus * (pressure_cap[index + 2] - pressure_cap[index + 1]) - A * t_x_water_minus * (pressure_cap[index] - pressure_cap[index + 1])# + (A * C1p + C2p) * pressure_oil_n[index + 1]
+    def count_d(solverSlau, pressure_cap, t_x_water_minus, t_x_water_plus, cell, index):
+        state_n_plus = cell.get_cell_state_n_plus()
+        A = state_n_plus.get_ro_oil() / state_n_plus.get_ro_water()
+        r_ost = - A * t_x_water_plus * (pressure_cap[index + 2] - pressure_cap[index + 1]) - A * t_x_water_minus * (pressure_cap[index] - pressure_cap[index + 1])
         solverSlau.add_nevyaz(index, -r_ost)
         return 0
 
@@ -104,8 +111,15 @@ class Solver:
 
 layer = Layer()
 solver = Solver()
+oil_water = OilWater()
 cell_container = CellContainer(layer.N, layer)
 cell_container.initialize_cells()
+
+flow_array = []
+for i in range(cell_container.get_len() - 1):
+    cells = cell_container.get_cells()
+    flow_array.append(Flow(cells[i], cells[i + 1]))
+
 
 
 pressure_cap_graph = {} #from graph {s_w: pressure_cap}
@@ -190,7 +204,7 @@ while time < solver.time_max:
     P_water_n = P_water.copy()
     s_water_n = s_water.copy()
     s_oil_n = s_oil.copy()
-    fi_list_n = [layer.count_fi((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]                     # 0.5 * (P_w+P_o)
+    fi_list_n = [layer.count_fi((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]
     ro_water_n = [layer.count_ro_water((P_oil_n[i] + P_water_n[i]) / 2.0) for i in range(1, layer.N - 1)]
     #same
 
@@ -202,6 +216,7 @@ while time < solver.time_max:
     #new
 
     while solver.count_norm(delta_list_k) > solver.delta_max:
+        print (solver.count_norm(delta_list_k))
         solver_slau.set_zero()
 
         t_water_minus_list = []
@@ -211,10 +226,6 @@ while time < solver.time_max:
         ro_water = []
         ro_oil = []
         fi_list = []
-
-        #new
-        t_new_oil = []
-        t_new_water = []
 
         for i in range(cell_container.get_len() - 1):
             cells = cell_container.get_cells()
@@ -226,12 +237,11 @@ while time < solver.time_max:
                 k_r = component.count_k_r(cell_state_n_plus.get_components_saturation()[component_index])
                 cell_state_n_plus.set_ro(ro, component_index)
                 cell_state_n_plus.set_k_r(k_r, component_index)
-
             fi = cell.layer.count_fi(cell_state_n_plus.get_pressure_oil())
             cell_state_n_plus.set_fi(fi)
-            flow = Flow(cells[i], cells[i + 1])
-            t_new_oil.append(flow.count_cells_flows()[0])
-            t_new_water.append(flow.count_cells_flows()[1])
+
+        for flow in flow_array:
+            flow.count_cells_flows()
 
         for i in range(1, layer.N - 1):
             t_water_minus_list.append(solver.count_t_water_minus(layer, P_water, s_water, i))
@@ -242,18 +252,21 @@ while time < solver.time_max:
             ro_oil.append(layer.count_ro_oil(P_oil[i]))
             fi_list.append(layer.count_fi(P_oil[i]))
 
-        for i in range(layer.N - 2):
-            c1_p = solver.count_c1_p(layer, solver, fi_list_n, s_water_n[1:-1], ro_water, i)
-            c2_p = solver.count_c2_p(layer, solver, fi_list_n, s_water_n[1:-1], ro_oil, i)
 
+        for flow in flow_array:
+            solver.count_b(solver_slau, flow)
+            solver.count_c(solver_slau, flow)
 
-        #count coefficients with solverSlau
+        for cell in cell_container.get_cells():
+            cell.get_cell_state_n_plus().set_c1_p(cell.layer.count_c1_p_new(solver, cell))
+            cell.get_cell_state_n_plus().set_c2_p(cell.layer.count_c2_p_new(solver, cell))
+            solver.count_a(solver_slau, cell)
+
 
         for i in range(solver_slau.e_count):
-            solver.count_b(solver_slau, ro_water, ro_oil, t_water_plus_list[i], t_oil_plus_list[i],P_oil, i)
-            solver.count_c(solver_slau, ro_oil, ro_water, t_water_minus_list[i], t_oil_minus_list[i], P_oil, i)
-            solver.count_a(solver_slau, ro_water, ro_oil, c1_p, c2_p, P_oil, P_oil_n, i)
-            solver.count_d(solver_slau, P_oil_n, P_cap, ro_water, ro_oil, t_water_minus_list[i], t_water_plus_list[i], c1_p, c2_p, i)
+            cell = cell_container.get_cells()[i + 1]
+            solver.count_d(solver_slau, P_cap, t_water_minus_list[i], t_water_plus_list[i], cell, i)
+
 
         solver_slau.solve_thomas_method(0.0, 0.0)
         delta_list_k = solver_slau.get_result()
@@ -282,7 +295,7 @@ while time < solver.time_max:
         t_water_plus_list.append(solver.count_t_water_plus(layer, P_water, s_water, i))
 
 
-    #recount_density water
+    #recount_density and fi water
     for i in range(1, cell_container.get_len() - 1):
         cells = cell_container.get_cells()
         cell = cells[i]
@@ -313,7 +326,6 @@ while time < solver.time_max:
         fi_list[i] = layer.count_fi(P_oil[i + 1])
         s_water[i + 1] = s_water_n[i + 1] * (fi_list_n[i] * ro_water_n[i])/(fi_list[i] * ro_water[i]) + (solver.tau/(fi_list[i] * ro_water[i])) * (t_water_plus_list[i] * (P_oil[i + 2] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i + 2]) + t_water_minus_list[i] * (P_oil[i] - P_oil[i + 1] + P_cap[i + 1] - P_cap[i]))
     s_water[layer.N - 1] = s_water[layer.N - 2]
-    print(solver.count_norm([s_water[i] - s_water_n[i] for i in range(len(s_water))]))
 
     for i in range(1, cell_container.get_len() - 1):
         cells = cell_container.get_cells()
@@ -335,7 +347,8 @@ while time < solver.time_max:
     #cells = cell_container.get_cells()
     #cells[-2].get_state_n = cells[-1].
 
-    if solver.count_norm([s_water[i] - s_water_n[i] for i in range(len(s_water))]) > 0.01:
+    if solver.count_norm([cell.get_cell_state_n_plus().get_s_water() - cell.get_cell_state_n().get_s_water() for cell in cell_container.get_cells()]) > 0.01:
+    #if solver.count_norm([s_water[i] - s_water_n[i] for i in range(len(s_water))]) > 0.01:
         print("S_n+1 - S_n > 0.1")
         solver.tau = solver.tau / 2.0
         #same
@@ -376,7 +389,7 @@ while time < solver.time_max:
             file.close()
 
         counter += 1
-    #Count S n + 1
+
 
 
 

@@ -9,7 +9,10 @@ class CellContainer:
     def __init__(self, cell_count, layer):
         self.cell_count = cell_count
         for i in range(cell_count):
-            self.container.append(Cell(i, layer))
+            if i == 0 or i == cell_count - 1:
+                self.container.append(Cell(i, layer, -1))
+            else:
+                self.container.append(Cell(i, layer, i - 1))
 
     def get_cells(self):
         return self.container
@@ -49,8 +52,8 @@ class CellContainer:
                     state.set_k_r(component.count_k_r(state.get_components_saturation()[component_index]), component_index)
                     state.set_ro(component.count_ro(state.get_components_pressure()[component_index]), component_index)
 
-
                 state.set_fi(cell.layer.count_fi((state.get_pressure_oil() + state.get_pressure_water()) / 2.0))
+
 
 
 
