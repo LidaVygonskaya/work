@@ -8,7 +8,7 @@ class OilWaterSS(OilWater):
         left_cell = cell_flow.get_left_cell()
         right_cell = cell_flow.get_right_cell()
 
-        b = np.matrix([[cell_flow.t_oil_water[Components.WATER.value], 0], [0, cell_flow.t_oil_water[Components.OIL.value]]])
+        b = np.matrix([[cell_flow.t_oil_water[Components.WATER.value], 0.0], [0.0, cell_flow.t_oil_water[Components.OIL.value]]])
         #от b
         t_p_11 = cell_flow.t_oil_water[Components.WATER.value] * right_cell.get_cell_state_n_plus().get_pressure_water()
         t_p_12 = cell_flow.t_oil_water[Components.OIL.value] * right_cell.get_cell_state_n_plus().get_pressure_oil()
@@ -29,7 +29,7 @@ class OilWaterSS(OilWater):
     @staticmethod
     def count_c(solverSlau, cell_flow):
         right_cell = cell_flow.get_right_cell()
-        left_cell = cell_flow.get_right_cell()
+        left_cell = cell_flow.get_left_cell()
         c = np.matrix([[cell_flow.t_oil_water[Components.WATER.value], 0], [0, cell_flow.t_oil_water[Components.OIL.value]]])
 
         #от с
@@ -45,7 +45,8 @@ class OilWaterSS(OilWater):
         solverSlau.set_matrix_coefficients_ss(cell_flow.get_right_cell().get_eq_index()[0],
                                               cell_flow.get_left_cell().get_eq_index()[0], c)
         if 0 <= right_cell.get_eq_index()[0] < solverSlau.e_count:
-            solverSlau.add_nevyaz(right_cell.get_eq_index()[0], -t_p)
+            if right_cell.get_eq_index()[0] != 0:
+                solverSlau.add_nevyaz(right_cell.get_eq_index()[0], -t_p)
             solverSlau.add_nevyaz(right_cell.get_eq_index()[0], t_p_a)
 
     def count_d_left_diag(self, cell, s_component_n, ro_component_der, ro_component_n_plus):
@@ -69,7 +70,7 @@ class OilWaterSS(OilWater):
                    + 0.5 * (ro_component_n_plus * s_component_n * layer.fi_0 * layer.c_r))
         return d
 
-    def count_a_ss(self, solverSlau, cell, delta):
+    def count_a_ss(self, solverSlau, cell):
         s_water_n = cell.get_cell_state_n().get_s_water()
         ro_water_der = cell.layer.ro_water_0 * cell.layer.c_f_water
         ro_water_n_plus = cell.get_cell_state_n_plus().get_ro_water()

@@ -48,7 +48,7 @@ class Layer:
         #space
         self.x_0 = 0.0
         self.x_N = 500.0  # meters
-        self.N = 100
+        self.N = 5
         self.h = (self.x_N - self.x_0) / (self.N - 1)
         self.z = 10.0
         self.V_ij = self.h ** 2.0 * self.z
@@ -90,6 +90,15 @@ class Layer:
             pressure_cap_graph.update({float(s[0]): float(s[1]) * self.atm})
         return pressure_cap_graph
 
+    def count_s_water_graph(self):
+        s_water_graph = {}
+        file = open('Pcap(Sw).txt', 'r')
+        for line in file.readlines():
+            line = line.rstrip()
+            s = line.split('\t')
+            s_water_graph.update({float(s[1])* self.atm: float(s[0])})
+        return s_water_graph
+
     def count_pressure_cap(self, p_cap_graph, s_water):
         s_w_graph = list(p_cap_graph.keys())
         for i in range(len(s_w_graph)):
@@ -97,6 +106,14 @@ class Layer:
                 p_cap = p_cap_graph.get(s_w_graph[i - 1]) + (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1])) / (s_w_graph[i] - s_w_graph[i - 1]) * (s_water - s_w_graph[i - 1])
                 break
         return p_cap
+
+    def count_s_water(self, s_water_graph, p_cap):
+        p_cap_graph = list(s_water_graph.keys())
+        for i in range(len(p_cap_graph)):
+            if p_cap <= p_cap_graph[i]:
+                s_wat = s_water_graph.get(p_cap_graph[i - 1]) + (s_water_graph.get(p_cap_graph[i]) - s_water_graph.get(p_cap_graph[i - 1])) / (p_cap_graph[i] - p_cap_graph[i - 1]) * (p_cap - p_cap_graph[i - 1])
+                break
+        return s_wat
 
     @staticmethod
     def count_pcap(p_cap_graph, s_water_list):

@@ -17,6 +17,12 @@ class OilWater:
         return max(list_delta_abs)
 
     @staticmethod
+    def count_norm_ss(list_delta):
+        list_delta_abs = [math.fabs(elem) for elem in list_delta]
+        return max(list_delta_abs)
+
+
+    @staticmethod
     def count_matrix_norm(list_delta):
         list_delta_abs = []
         for elem in list_delta:
