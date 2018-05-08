@@ -1,7 +1,29 @@
 from abc import abstractmethod
-
+from oil_water_filtration.Enums import Components
+import math
 
 class OilWater:
+    def __init__(self):
+        self.delta_0 = 1000.0
+        self.delta_max = 10 ** (-3)
+        self.tau_default = 86400.0  # s- time step
+        self.tau = self.tau_default
+        # time_max = 365.25 * 4 * tau
+        self.time_max = 365.25 * 1 * 86400
+
+    @staticmethod
+    def count_norm(list_delta):
+        list_delta_abs = [math.fabs(elem) for elem in list_delta[1:-1]]
+        return max(list_delta_abs)
+
+    @staticmethod
+    def count_matrix_norm(list_delta):
+        list_delta_abs = []
+        for elem in list_delta:
+            for el in elem:
+                list_delta_abs.append(math.fabs(el))
+        return max(list_delta_abs)
+
     @staticmethod
     def recount_properties(cell_container):
         for i in range(cell_container.get_len()):
@@ -20,37 +42,53 @@ class OilWater:
 
     @staticmethod
     def count_flows(flows_array):
-        t_oil_water = [[], []]
         for flow in flows_array:
-            t_oil_water.append(flow.count_cells_flows()[0])
-            t_oil_water.append(flow.count_cells_flows()[1])
-        return t_oil_water
-
-        return 0
+            flow.count_cells_flows()
 
     def solve_slau(self):
         return 0
 
     @abstractmethod
-    def generate_matrix(self):
+    def generate_matrix(self, flow_array, cell_container, solverSlau, solver):
         pass
 
     @abstractmethod
     def give_result_to_cells(self):
         pass
 
+    @staticmethod
     @abstractmethod
-    def count_a(self):
+    def count_a(solverSlau, cell):
         pass
 
+
+    @staticmethod
     @abstractmethod
-    def count_b(self):
+    def count_b(solverSlau, cell_flow):
         pass
 
+    @staticmethod
     @abstractmethod
-    def count_c(self):
+    def count_c(solverSlau, cell_flow):
         pass
 
+    @staticmethod
     @abstractmethod
-    def count_d(self):
+    def update_pressure(cell_container, delta_list_k):
         pass
+
+    @staticmethod
+    @abstractmethod
+    def solve_slau():
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def main_cycle(self):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def show_results(self, time, layer,cell_container):
+        pass
+

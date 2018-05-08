@@ -1,6 +1,6 @@
 from oil_water_filtration.Oil import Oil
 from oil_water_filtration.Water import Water
-
+from oil_water_filtration.Enums import Components
 
 class Layer:
     def __init__(self):
@@ -55,10 +55,10 @@ class Layer:
 
 
     def get_water_component(self):
-        return self.components[1]
+        return self.components[Components.WATER.value]
 
     def get_oil_component(self):
-        return self.components[0]
+        return self.components[Components.OIL.value]
 
 
     @staticmethod

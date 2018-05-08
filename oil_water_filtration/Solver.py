@@ -4,7 +4,7 @@ import numpy as np
 class SolverSlau():
     def __init__(self, equation_count): #equation_count - количество уравнений равно количеству неизвестных
         self.e_count = equation_count
-        self.coefficient_matrix = np.zeros((self.e_count, self.e_count))
+        self.coefficient_matrix = np.zeros((self.e_count, self.e_count), dtype=object)
         #self.result_vector = np.array(self.e_count)
         self.result_vector = []
         self.nevyaz_vector = np.zeros(self.e_count)
@@ -32,6 +32,14 @@ class SolverSlau():
 
             if j < self.e_count and j >= 0:
                 self.add_coefficient(i, j, coefficient)
+
+    def set_matrix_coefficients_ss(self, i, j, coefficient):
+        if i < self.e_count and i >= 0:
+            self.add_coefficient(i, i, -coefficient)
+            if j < self.e_count and j >= 0:
+                self.add_coefficient(i, j, coefficient)
+
+
 
     #for a and d
     def set_matrix_coeffitients_a_d(self, i, j, pressure_oil, pressure_oil_n, coefficient):
@@ -66,6 +74,36 @@ class SolverSlau():
         self.result_vector.append(left_gr)
         self.result_vector.reverse()
         self.result_vector.append(right_gr)
+
+    def solve_thomas_matrix_method(self, left_gr_water, right_gr_water, left_gr_oil, right_gr_oil):
+        w_1 = self.coefficient_matrix[0, 0]
+        #q_1 = np.linalg.inv(w_1) * self.coefficient_matrix[0, 1]
+        w_list = [w_1]
+        q_list = []
+
+        for i in range(1, self.e_count):
+            q_i = np.linalg.inv(w_list[-1]) * self.coefficient_matrix[i - 1, i]
+            q_list.append(q_i)
+            w_i = self.coefficient_matrix[i, i] - self.coefficient_matrix[i, i - 1] * q_list[i - 1]
+            w_list.append(w_i)
+
+
+        g_1 = np.matmul(np.linalg.inv(w_list[0]),self.nevyaz_vector[0])
+        g_list = [g_1]
+        for i in range(1, self.e_count):
+            b = self.nevyaz_vector[i] - np.matmul(self.coefficient_matrix[i, i - 1] , g_list[i - 1])
+            g_i = np.matmul(np.linalg.inv(w_list[i]), b)
+            g_list.append(g_i)
+
+        self.result_vector.append(g_list[-1])
+        for i in range(len(g_list) - 2, -1, -1):
+            u_i = g_list[i] - np.matmul(q_list[i], self.result_vector[-1])
+            self.result_vector.append(u_i)
+
+        #self.result_vector.append([left_gr_water, left_gr_oil])
+        self.result_vector.reverse()
+        #self.result_vector.append([right_gr_water, right_gr_oil])
+
 
     def get_result(self):
         return self.result_vector
