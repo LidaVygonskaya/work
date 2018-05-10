@@ -48,7 +48,7 @@ class Layer:
         #space
         self.x_0 = 0.0
         self.x_N = 500.0  # meters
-        self.N = 5
+        self.N = 4
         self.h = (self.x_N - self.x_0) / (self.N - 1)
         self.z = 10.0
         self.V_ij = self.h ** 2.0 * self.z
@@ -96,10 +96,21 @@ class Layer:
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
-            s_water_graph.update({float(s[1])* self.atm: float(s[0])})
+            s_water_graph.update({float(s[1]) * self.atm: float(s[0])})
         return s_water_graph
 
-    def count_pressure_cap(self, p_cap_graph, s_water):
+    #Считаем производную для SS метода
+    @staticmethod
+    def count_s_water_graph_der(p_cap_graph, s_water):
+        s_w_graph = list(p_cap_graph.keys())
+        for i in range(len(s_w_graph)):
+            if s_water <= s_w_graph[i]:
+                s_der = (s_w_graph[i] - s_w_graph[i - 1]) / (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1]))
+                break
+        return s_der
+
+    @staticmethod
+    def count_pressure_cap(p_cap_graph, s_water):
         s_w_graph = list(p_cap_graph.keys())
         for i in range(len(s_w_graph)):
             if s_water <= s_w_graph[i]:
@@ -109,10 +120,12 @@ class Layer:
 
     def count_s_water(self, s_water_graph, p_cap):
         p_cap_graph = list(s_water_graph.keys())
+        p_cap_graph.reverse()
         for i in range(len(p_cap_graph)):
             if p_cap <= p_cap_graph[i]:
                 s_wat = s_water_graph.get(p_cap_graph[i - 1]) + (s_water_graph.get(p_cap_graph[i]) - s_water_graph.get(p_cap_graph[i - 1])) / (p_cap_graph[i] - p_cap_graph[i - 1]) * (p_cap - p_cap_graph[i - 1])
                 break
+            #s_wat = 10 ** (-4)
         return s_wat
 
     @staticmethod

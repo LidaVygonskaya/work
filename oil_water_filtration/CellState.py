@@ -109,6 +109,7 @@ class CellState:
     def set_equals_to(self, cell_state_new):
         self.pressure_oil_water[Components.OIL.value] = cell_state_new.pressure_oil_water[Components.OIL.value]
         self.pressure_oil_water[Components.WATER.value] = cell_state_new.pressure_oil_water[Components.WATER.value]
+        self.pressure_cap = cell_state_new.pressure_cap
         self.s_oil_water[Components.OIL.value] = cell_state_new.s_oil_water[Components.OIL.value]
         self.s_oil_water[Components.WATER.value] = cell_state_new.s_oil_water[Components.WATER.value]
         self.ro_oil_water[Components.OIL.value] = cell_state_new.ro_oil_water[Components.OIL.value]

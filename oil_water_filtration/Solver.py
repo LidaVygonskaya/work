@@ -10,8 +10,6 @@ class SolverSlau():
         self.nevyaz_vector = np.zeros(self.e_count)
 
     def add_coefficient(self, i, j, coefficient):
-        if (i == 0):
-            print(i, j, coefficient )
         self.coefficient_matrix[i, j] += coefficient
 
     def set_coefficient(self, i, j, value):
