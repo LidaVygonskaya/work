@@ -11,15 +11,16 @@ from matplotlib import pyplot as plt
 layer = Layer()
 oil_water_ss = OilWaterSS()
 solver_slau = SolverSlau(layer.N - 2)
-solver_slau.coefficient_matrix = np.zeros((3, 3, 2, 2), float)
-solver_slau.nevyaz_vector = np.zeros((3, 2, 1))
+solver_slau.coefficient_matrix = np.zeros((98, 98, 2, 2), float)
+solver_slau.nevyaz_vector = np.zeros((98, 2, 1))
 
 cell_container = CellContainer(layer.N, layer)
 cell_container.initialize_cells()
 
 
-for cell in cell_container.get_cells()[1:-1]:
+for cell in cell_container.get_cells()[1:]:
     cell.get_cell_state_n().set_s_water(10 ** (-4))
+    #cell.get_cell_state_n_plus().set_s_water(10 ** (-4))
 
 flow_array = []
 for i in range(cell_container.get_len() - 1):
@@ -34,6 +35,16 @@ while time < oil_water_ss.time_max:
     delta_list_k = [[0.0, 0.0]] + [[oil_water_ss.delta_0, oil_water_ss.delta_0] for i in range(layer.N - 2)] + [[0.0, 0.0]]
     for cell in cell_container.get_cells():
         cell.get_cell_state_n().set_equals_to(cell.get_cell_state_n_plus())
+
+    for cell in cell_container.get_cells()[1:-1]:
+        cell.get_cell_state_n_plus().set_pressure_water(cell.get_cell_state_n_plus().get_pressure_water() + 1000.0)
+        cell.get_cell_state_n_plus().set_pressure_oil(cell.get_cell_state_n_plus().get_pressure_oil() + 1000.0)
+
+    if counter == 1:
+        for cell in cell_container.get_cells()[1:]:
+            cell.get_cell_state_n().set_s_water(10 ** (-4))
+            cell.get_cell_state_n().set_s_oil(1.0 - 10 ** (-4))
+
 
 
 
