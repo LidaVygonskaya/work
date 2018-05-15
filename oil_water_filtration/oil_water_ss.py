@@ -19,7 +19,7 @@ cell_container.initialize_cells()
 
 
 for cell in cell_container.get_cells()[1:]:
-    cell.get_cell_state_n().set_s_water(10 ** (-4))
+    cell.get_cell_state_n().set_s_water(0.1)
     #cell.get_cell_state_n_plus().set_s_water(10 ** (-4))
 
 flow_array = []
@@ -36,14 +36,18 @@ while time < oil_water_ss.time_max:
     for cell in cell_container.get_cells():
         cell.get_cell_state_n().set_equals_to(cell.get_cell_state_n_plus())
 
-    for cell in cell_container.get_cells()[1:-1]:
-        cell.get_cell_state_n_plus().set_pressure_water(cell.get_cell_state_n_plus().get_pressure_water() + 1000.0)
-        cell.get_cell_state_n_plus().set_pressure_oil(cell.get_cell_state_n_plus().get_pressure_oil() + 1000.0)
+    # for cell in cell_container.get_cells()[1:-1]:
+    #     cell.get_cell_state_n_plus().set_pressure_water(cell.get_cell_state_n_plus().get_pressure_water() + 1000.0)
+    #     cell.get_cell_state_n_plus().set_pressure_oil(cell.get_cell_state_n_plus().get_pressure_oil() + 1000.0)
 
     if counter == 1:
         for cell in cell_container.get_cells()[1:]:
-            cell.get_cell_state_n().set_s_water(10 ** (-4))
-            cell.get_cell_state_n().set_s_oil(1.0 - 10 ** (-4))
+            cell.get_cell_state_n().set_s_water(0.1)
+            cell.get_cell_state_n().set_s_oil(1.0 - 0.1)
+            cell.get_cell_state_n().set_s_oil(0.9 ** 2)
+            cell.get_cell_state_n().set_s_water(0.1 ** 2)
+            cell.get_cell_state_n_plus().set_s_water(0.1)
+            cell.get_cell_state_n_plus().set_s_oil(0.9)
 
 
 
@@ -52,15 +56,17 @@ while time < oil_water_ss.time_max:
     while oil_water_ss.count_matrix_norm(delta_list_k) > oil_water_ss.delta_max:
         print(oil_water_ss.count_matrix_norm(delta_list_k))
         solver_slau.set_zero()
-        solver_slau.coefficient_matrix = np.zeros((2, 2, 2, 2), float)
-        solver_slau.nevyaz_vector = np.zeros((2, 2, 1))
+        solver_slau.coefficient_matrix = np.zeros((98, 98, 2, 2), float)
+        solver_slau.nevyaz_vector = np.zeros((98, 2, 1))
         oil_water_ss.recount_properties(cell_container)
         oil_water_ss.count_flows(flow_array)
 
         #generate matrix
+        i = 0
         for flow in flow_array:
             oil_water_ss.count_b(solver_slau, flow)
             oil_water_ss.count_c(solver_slau, flow)
+            i+=1
 
         coeff_mat = write(solver_slau.coefficient_matrix)
         nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
@@ -124,16 +130,16 @@ while time < oil_water_ss.time_max:
     x = np.append(x, layer.x_N)
 
     #update cells pressure_cap and saturation
-    for cell in cell_container.get_cells():
+    for cell in cell_container.get_cells()[1:-1]:
         p_wat.append(cell.get_cell_state_n_plus().get_pressure_water())
         p_oil.append(cell.get_cell_state_n_plus().get_pressure_oil())
         state_n_plus = cell.get_cell_state_n_plus()
         state_n_plus.set_pressure_cap(state_n_plus.get_pressure_oil() - state_n_plus.get_pressure_water())
         s_water_graph = cell.layer.count_s_water_graph()
         print(state_n_plus.get_pressure_cap())
-        #s_w = cell.layer.count_s_water(s_water_graph, state_n_plus.get_pressure_cap())
-        #cell.get_cell_state_n_plus().set_s_water(s_w)
-        #cell.get_cell_state_n_plus().set_s_oil(1.0 - s_w)
+        s_w = cell.layer.count_s_water(s_water_graph, state_n_plus.get_pressure_cap())
+        cell.get_cell_state_n_plus().set_s_water(s_w)
+        cell.get_cell_state_n_plus().set_s_oil(1.0 - s_w)
 
     print("COUNTER " + str(counter))
     if counter == 125:
@@ -142,9 +148,9 @@ while time < oil_water_ss.time_max:
             state = cell_container.get_cells()[i].get_cell_state_n_plus()
             file.write(str(x[i]) + ' ' + str(state.get_s_water()) + '\n')
         file.close()
-    plt.plot(x, p_wat)
-    plt.plot(x, p_oil)
-    plt.show()
+    #plt.plot(x, p_wat)
+    #plt.plot(x, p_oil)
+    #plt.show()
     counter += 1
     time += oil_water_ss.tau
 

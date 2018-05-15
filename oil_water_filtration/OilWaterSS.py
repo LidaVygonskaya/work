@@ -25,6 +25,7 @@ class OilWaterSS(OilWater):
         solverSlau.set_matrix_coefficients_ss(cell_flow.get_left_cell().get_eq_index()[0],
                                               cell_flow.get_right_cell().get_eq_index()[0], b)
         if 0 <= left_cell.get_eq_index()[0] < solverSlau.e_count:
+
             solverSlau.add_nevyaz(left_cell.get_eq_index()[0], -t_p)
             solverSlau.add_nevyaz(left_cell.get_eq_index()[0], t_p_a)
 
@@ -41,8 +42,7 @@ class OilWaterSS(OilWater):
         t_p = np.matrix([[t_p_11], [t_p_12]])
 
         # от а
-        t_p_11_a = cell_flow.t_oil_water[
-                       Components.WATER.value] * right_cell.get_cell_state_n_plus().get_pressure_water()
+        t_p_11_a = cell_flow.t_oil_water[Components.WATER.value] * right_cell.get_cell_state_n_plus().get_pressure_water()
         t_p_12_a = cell_flow.t_oil_water[Components.OIL.value] * right_cell.get_cell_state_n_plus().get_pressure_oil()
         t_p_a = np.matrix([[t_p_11_a], [t_p_12_a]])
 
@@ -59,7 +59,7 @@ class OilWaterSS(OilWater):
         p_cap_graph = layer.count_pcap_graph()
         s_der = layer.count_s_water_graph_der(p_cap_graph, state_n.get_s_water())
 
-        d = (layer.V_ij / self.tau) * ((state_n.get_fi() * s_component_n) * ro_component_der
+        d = (1.0 / self.tau) * ((state_n.get_fi() * s_component_n) * ro_component_der
                                        - (state_n_plus.get_fi() * ro_component_n_plus) * s_der +
                                        0.5 * (ro_component_n_plus * s_component_n * layer.fi_0 * layer.c_r))
         return d
@@ -71,7 +71,7 @@ class OilWaterSS(OilWater):
         p_cap_graph = layer.count_pcap_graph()
         s_der = layer.count_s_water_graph_der(p_cap_graph, state_n.get_s_water())
 
-        d = (layer.V_ij / self.tau) * ((state_n_plus.get_fi() * ro_component_n_plus) * s_der
+        d = (1.0 / self.tau) * ((state_n_plus.get_fi() * ro_component_n_plus) * s_der
                                        + 0.5 * (ro_component_n_plus * s_component_n * layer.fi_0 * layer.c_r))
         return d
 

@@ -9,16 +9,16 @@ class Layer:
         self.ro_water_0 = 1000.0
         self.P_01 = 80 * self.atm  # new
         self.P_02 = 80 * self.atm
-        self.c_f_oil = 0.0 #(10.0 ** (-4)) / self.atm
-        self.c_f_water = 0.0 #(10.0 ** (-4)) / self.atm
-        self.c_r = (10.0 ** (-9)) / self.atm
+        self.c_f_oil = (10.0 ** (-4)) / self.atm
+        self.c_f_water = (10.0 ** (-4)) / self.atm
+        self.c_r = (10.0 ** (-5)) / self.atm
         self.fi_0 = 0.2
 
         self.mu_oil = 10.0 * (10.0 ** (-3))
         self.mu_water = 10.0 ** (-3)
         self.mu_oil_water = [self.mu_oil, self.mu_water]
 
-        self.k = (9.868233 * (10 ** (-13))) * 10 ** (0)
+        self.k = (9.868233 * (10 ** (-13))) * 10 ** (-1)
         self.s_water_init = 0.0
         self.s_oil_init = 1 - self.s_water_init
         self.pressure_cap_init = [] #list
@@ -48,7 +48,7 @@ class Layer:
         #space
         self.x_0 = 0.0
         self.x_N = 500.0  # meters
-        self.N = 4
+        self.N = 100
         self.h = (self.x_N - self.x_0) / (self.N - 1)
         self.z = 10.0
         self.V_ij = self.h ** 2.0 * self.z

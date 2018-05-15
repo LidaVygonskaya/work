@@ -38,7 +38,8 @@ class CellContainer:
                     state.set_s_oil(cell.layer.s_oil_right)
                     state.set_pressure_oil(cell.layer.pressure_oil_right)
                     state.set_pressure_cap(cell.layer.count_pressure_cap(pressure_cap_graph, cell.layer.s_water_right))
-                    state.set_pressure_water(cell.layer.pressure_water_right)
+                    #state.set_pressure_water(cell.layer.pressure_water_right)
+                    state.set_pressure_water(state.get_pressure_oil() - state.get_pressure_cap())
 
                 else:
                     state.set_s_oil(cell.layer.s_oil_init)

@@ -20,6 +20,7 @@ class SolverSlau():
         self.nevyaz_vector = np.zeros(self.e_count)
 
     def add_nevyaz(self, i, coefficient):
+        #print(i, coefficient)
         self.nevyaz_vector[i] += coefficient
 
     def set_matrix_coefficients(self, i, j, pressure_oil_i, pressure_oil_j, coefficient):
