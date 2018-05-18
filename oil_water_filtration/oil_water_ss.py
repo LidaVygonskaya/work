@@ -142,8 +142,8 @@ while time < oil_water_ss.time_max:
         cell.get_cell_state_n_plus().set_s_oil(1.0 - s_w)
 
     print("COUNTER " + str(counter))
-    if counter == 125:
-        file = open('s(x)_count_125_days_ss_method.txt', 'w')
+    if counter == 364:
+        file = open('s(x)_count_364_days_ss_method.txt', 'w')
         for i in range(cell_container.get_len()):
             state = cell_container.get_cells()[i].get_cell_state_n_plus()
             file.write(str(x[i]) + ' ' + str(state.get_s_water()) + '\n')
