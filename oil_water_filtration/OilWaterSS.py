@@ -1,9 +1,65 @@
-from oil_water_filtration.OilWater import OilWater
 import numpy as np
+import math
+from oil_water_filtration.OilWater import OilWater
 from oil_water_filtration.Enums import Components
 
 
 class OilWaterSS(OilWater):
+
+    def check_saturation_convergence(self, cell_container):
+        return False
+
+    def show_results(self, time, layer, cell_container):
+        x = np.arange(layer.x_0, layer.x_N, layer.h)
+        x = np.append(x, layer.x_N)
+        file = open('s(x)_count_' + str(time) + '_days_ss_method.txt', 'w')
+        for i in range(cell_container.get_len()):
+            state = cell_container.get_cells()[i].get_cell_state_n_plus()
+            file.write(str(x[i]) + ' ' + str(state.get_s_water()) + '\n')
+        file.close()
+        file = open('p(x)_count_' + str(time) + '_days_ss_method.txt', 'w')
+        for i in range(cell_container.get_len()):
+            state = cell_container.get_cells()[i].get_cell_state_n_plus()
+            file.write(str(x[i]) + ' ' + str(state.get_pressure_water()) + '\n')
+        file.close()
+
+    def update_saturation(self, cell_container, flow_array):
+        for cell in cell_container.get_cells()[1:-1]:
+            state_n_plus = cell.get_cell_state_n_plus()
+            state_n_plus.set_pressure_cap(state_n_plus.get_pressure_oil() - state_n_plus.get_pressure_water())
+            s_water_graph = cell.layer.count_s_water_graph()
+            print(state_n_plus.get_pressure_cap())
+            s_w = cell.layer.count_s_water(s_water_graph, state_n_plus.get_pressure_cap())
+            cell.get_cell_state_n_plus().set_s_water(s_w)
+            cell.get_cell_state_n_plus().set_s_oil(1.0 - s_w)
+            cells = cell_container.get_cells()
+            cells[-1].get_cell_state_n_plus().set_s_water(cells[-2].get_cell_state_n_plus().get_s_water())
+            cells[-1].get_cell_state_n_plus().set_s_oil(cells[-2].get_cell_state_n_plus().get_s_oil())
+
+    @staticmethod
+    def update_pressure(cell_container, delta_list_k):
+        for i in range(1, cell_container.get_len() - 1):
+            cell = cell_container.get_cells()[i]
+            cell.get_cell_state_n_plus().set_pressure_water(
+                cell.get_cell_state_n_plus().get_pressure_water() + delta_list_k[i - 1][0][0])
+            cell.get_cell_state_n_plus().set_pressure_oil(
+                cell.get_cell_state_n_plus().get_pressure_oil() + delta_list_k[i - 1][1][0])
+
+    @staticmethod
+    def solve_slau(solver_slau):
+        solver_slau.solve_thomas_matrix_method(0.0, 0.0, 0.0, 0.0)
+
+    def generate_delta_k(self, layer):
+        return [[0.0, 0.0]] + [[self.delta_0, self.delta_0] for i in range(layer.N - 2)] + [[0.0, 0.0]]
+
+    @staticmethod
+    def count_norm(list_delta):
+        list_delta_abs = []
+        for elem in list_delta:
+            for el in elem:
+                list_delta_abs.append(math.fabs(el))
+        return max(list_delta_abs)
+
     @staticmethod
     def count_b(solverSlau, cell_flow):
         left_cell = cell_flow.get_left_cell()
@@ -104,6 +160,23 @@ class OilWaterSS(OilWater):
     def give_result_to_cells(self):
         pass
 
-    def generate_matrix(self):
+    def generate_matrix(self, flow_array, cell_container, solver_slau):
+        for flow in flow_array:
+            self.count_b(solver_slau, flow)
+            self.count_c(solver_slau, flow)
 
-        pass
+        #coeff_mat = write(solver_slau.coefficient_matrix)
+        #nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
+
+        for cell in cell_container.get_cells():
+            self.count_a_ss(solver_slau, cell)
+
+        #coeff_mat = write(solver_slau.coefficient_matrix)
+        #nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
+
+
+    @staticmethod
+    def reshape_matrices(solver_slau):
+        solver_slau.coefficient_matrix = np.zeros((98, 98, 2, 2), float)
+        solver_slau.nevyaz_vector = np.zeros((98, 2, 1))
+

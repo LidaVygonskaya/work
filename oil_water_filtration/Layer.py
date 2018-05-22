@@ -19,7 +19,7 @@ class Layer:
         self.mu_oil_water = [self.mu_oil, self.mu_water]
 
         self.k = (9.868233 * (10 ** (-13))) * 10 ** (-1)
-        self.s_water_init = 0.0
+        self.s_water_init = 10 ** (-4)
         self.s_oil_init = 1 - self.s_water_init
         self.pressure_cap_init = [] #list
         self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!

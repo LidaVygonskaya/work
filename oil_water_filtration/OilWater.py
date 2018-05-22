@@ -12,23 +12,9 @@ class OilWater:
         self.time_max = 365.25 * 1 * 86400
 
     @staticmethod
+    @abstractmethod
     def count_norm(list_delta):
-        list_delta_abs = [math.fabs(elem) for elem in list_delta[1:-1]]
-        return max(list_delta_abs)
-
-    @staticmethod
-    def count_norm_ss(list_delta):
-        list_delta_abs = [math.fabs(elem) for elem in list_delta]
-        return max(list_delta_abs)
-
-
-    @staticmethod
-    def count_matrix_norm(list_delta):
-        list_delta_abs = []
-        for elem in list_delta:
-            for el in elem:
-                list_delta_abs.append(math.fabs(el))
-        return max(list_delta_abs)
+        pass
 
     @staticmethod
     def recount_properties(cell_container):
@@ -51,11 +37,13 @@ class OilWater:
         for flow in flows_array:
             flow.count_cells_flows()
 
-    def solve_slau(self):
-        return 0
+    @staticmethod
+    @abstractmethod
+    def solve_slau(solver_slau):
+        pass
 
     @abstractmethod
-    def generate_matrix(self, flow_array, cell_container, solverSlau, solver):
+    def generate_matrix(self, flow_array, cell_container, solverSlau):
         pass
 
     @abstractmethod
@@ -83,18 +71,65 @@ class OilWater:
     def update_pressure(cell_container, delta_list_k):
         pass
 
+    @abstractmethod
+    def update_saturation(self, cell_container, flow_array):
+        pass
+
     @staticmethod
     @abstractmethod
     def solve_slau():
         pass
 
-    @staticmethod
+    def main_cycle(self, layer, cell_container, solver_slau, flow_array):
+        time = self.tau
+        counter = 1
+        while time < self.time_max:
+
+            delta_list_k = self.generate_delta_k(layer)
+
+            for cell in cell_container.get_cells():
+                cell.get_cell_state_n().set_equals_to(cell.get_cell_state_n_plus())
+            while self.count_norm(delta_list_k) > self.delta_max:
+                solver_slau.set_zero()
+                self.recount_properties(cell_container)
+                self.count_flows(flow_array)
+                self.generate_matrix(flow_array, cell_container, solver_slau)
+
+                self.solve_slau(solver_slau)
+                delta_list_k = solver_slau.get_result()
+                solver_slau.clear_result()
+                self.update_pressure(cell_container, delta_list_k)
+
+            self.recount_properties(cell_container)
+            self.count_flows(flow_array)
+            self.update_saturation(cell_container, flow_array)
+
+            if self.check_saturation_convergence(cell_container):
+                self.tau = self.tau / 2.0
+                for cell in cell_container.get_cells():
+                    cell.get_cell_state_n_plus().set_equals_to(cell.get_cell_state_n())
+
+            else:
+                print(time)
+                time += self.tau
+                self.tau = max(self.tau * 2.0, self.tau_default)
+                if 125 * 86400.0 - time - self.tau <= 0:
+                    self.tau = 125 * 86400.0 - time
+
+                if abs(time - 86400.0 * 125) < 1.e-16:
+                    self.show_results(time, layer, cell_container)
+                counter += 1
+
+
     @abstractmethod
-    def main_cycle(self):
+    def show_results(self, time, layer, cell_container):
         pass
 
-    @staticmethod
     @abstractmethod
-    def show_results(self, time, layer,cell_container):
+    def generate_delta_k(self, layer):
+        pass
+
+    @abstractmethod
+    def check_saturation_convergence(self, cell_container):
         pass
 
