@@ -40,6 +40,7 @@ while time < oil_water_ss.time_max:
     oil_water_ss.update_saturation(cell_container, flow_array)
 
     print("COUNTER " + str(counter))
+
     if counter == 125:
         oil_water_ss.show_results(counter, layer, cell_container)
 
