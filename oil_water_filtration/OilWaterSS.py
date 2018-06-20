@@ -30,6 +30,8 @@ class OilWaterSS(OilWater):
             state_n_plus.set_pressure_cap(state_n_plus.get_pressure_oil() - state_n_plus.get_pressure_water())
             s_water_graph = cell.layer.count_s_water_graph()
             s_w = cell.layer.count_s_water(s_water_graph, state_n_plus.get_pressure_cap())
+            if s_w < 0.2:
+                print("meow")
             cell.get_cell_state_n_plus().set_s_water(s_w)
             cell.get_cell_state_n_plus().set_s_oil(1.0 - s_w)
             cells = cell_container.get_cells()
@@ -165,14 +167,14 @@ class OilWaterSS(OilWater):
             self.count_b(solver_slau, flow)
             self.count_c(solver_slau, flow)
 
-        coeff_mat = write(solver_slau.coefficient_matrix)
-        nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
+        #coeff_mat = write(solver_slau.coefficient_matrix)
+        #nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
 
         for cell in cell_container.get_cells():
             self.count_a_ss(solver_slau, cell)
 
-        coeff_mat = write(solver_slau.coefficient_matrix)
-        nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
+        #coeff_mat = write(solver_slau.coefficient_matrix)
+        #nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
         #print("meow")
 
 

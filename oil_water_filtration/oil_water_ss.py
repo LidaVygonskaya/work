@@ -24,7 +24,7 @@ while time < oil_water_ss.time_max:
     for cell in cell_container.get_cells():
         cell.get_cell_state_n().set_equals_to(cell.get_cell_state_n_plus())
 
-    for cell in cell_container.get_cells()[1:-1]:
+    for cell in cell_container.get_cells()[1:]:
         cell.get_cell_state_n_plus().set_pressure_water(cell.get_cell_state_n().get_pressure_water() + 1000.0)
         cell.get_cell_state_n_plus().set_pressure_oil(cell.get_cell_state_n().get_pressure_oil() + 1000.0)
 
@@ -47,7 +47,7 @@ while time < oil_water_ss.time_max:
 
     print("COUNTER " + str(counter))
 
-    if counter == 125 or counter == 364 or counter == 50:
+    if counter == 125 or counter == 364 or counter == 50 or counter == 1:
         oil_water_ss.show_results(counter, layer, cell_container)
 
     counter += 1
