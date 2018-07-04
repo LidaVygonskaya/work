@@ -6,10 +6,6 @@ from oil_water_filtration.Write import write, write_nevyaz
 
 
 class OilWaterSS(OilWater):
-
-    def check_saturation_convergence(self, cell_container):
-        return False
-
     def show_results(self, time, layer, cell_container):
         x = np.arange(layer.x_0, layer.x_N, layer.h)
         x = np.append(x, layer.x_N)
@@ -30,8 +26,6 @@ class OilWaterSS(OilWater):
             state_n_plus.set_pressure_cap(state_n_plus.get_pressure_oil() - state_n_plus.get_pressure_water())
             s_water_graph = cell.layer.count_s_water_graph()
             s_w = cell.layer.count_s_water(s_water_graph, state_n_plus.get_pressure_cap())
-            if s_w < 0.2:
-                print("meow")
             cell.get_cell_state_n_plus().set_s_water(s_w)
             cell.get_cell_state_n_plus().set_s_oil(1.0 - s_w)
             cells = cell_container.get_cells()
@@ -46,6 +40,43 @@ class OilWaterSS(OilWater):
                 cell.get_cell_state_n_plus().get_pressure_water() + delta_list_k[i - 1][0][0])
             cell.get_cell_state_n_plus().set_pressure_oil(
                 cell.get_cell_state_n_plus().get_pressure_oil() + delta_list_k[i - 1][1][0])
+
+    def count_max_elem(self, list_delta):
+        list_delta_abs = []
+        for elem in list_delta:
+            list_delta_abs.append(math.fabs(elem))
+        return max(list_delta_abs)
+
+    #Условие на на оба давления
+    def check_pressure_convergence(self, cell_container, delta_list_k):
+        water_conv_list = []
+        oil_conv_list = []
+        for i in range(1, cell_container.get_len() - 1):
+            cell = cell_container.get_cells()[i]
+            water_conv = delta_list_k[i - 1][0][0] / cell.get_cell_state_n().get_pressure_water()
+            oil_conv = delta_list_k[i - 1][1][0] / cell.get_cell_state_n().get_pressure_oil()
+            water_conv_list.append(water_conv)
+            oil_conv_list.append(oil_conv)
+
+        if self.count_max_elem(water_conv_list) > 0.01 or self.count_max_elem(oil_conv_list) > 0.01:
+            print("P_n+1 - P_n / P_n > 0.01")
+            return True
+        else:
+            return False
+
+    #Условие на капилярное давление
+    def check_pressure_cap_convergence(self, cell_container, delta_list_k):
+        p_cap_conv_list = []
+        for i in range(1, cell_container.get_len() - 1):
+            cell = cell_container.get_cells()[i]
+            p_cap_conv = (delta_list_k[i - 1][1][0] - delta_list_k[i - 1][0][0]) / cell.get_cell_state_n().get_pressure_cap()
+            p_cap_conv_list.append(p_cap_conv)
+
+        if self.count_max_elem(p_cap_conv_list) > 4.0:
+            print("P_n+1 - P_n / P_n > 0.1")
+            return True
+        else:
+            return False
 
     @staticmethod
     def solve_slau(solver_slau):
@@ -167,15 +198,14 @@ class OilWaterSS(OilWater):
             self.count_b(solver_slau, flow)
             self.count_c(solver_slau, flow)
 
-        #coeff_mat = write(solver_slau.coefficient_matrix)
-        #nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
+        coeff_mat = write(solver_slau.coefficient_matrix)
+        nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
 
         for cell in cell_container.get_cells():
             self.count_a_ss(solver_slau, cell)
 
-        #coeff_mat = write(solver_slau.coefficient_matrix)
-        #nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
-        #print("meow")
+        coeff_mat = write(solver_slau.coefficient_matrix)
+        nevyaz_mat = write_nevyaz(solver_slau.nevyaz_vector)
 
 
     @staticmethod

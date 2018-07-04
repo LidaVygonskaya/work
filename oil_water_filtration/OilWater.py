@@ -9,7 +9,7 @@ class OilWater:
         self.tau_default = 86400.0  # s- time step
         self.tau = self.tau_default
         # time_max = 365.25 * 4 * tau
-        self.time_max = 365.25 * 1 * 86400
+        self.time_max = 728 * 1 * 86400
 
     @staticmethod
     @abstractmethod

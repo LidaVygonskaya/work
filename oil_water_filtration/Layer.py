@@ -19,7 +19,7 @@ class Layer:
         self.mu_oil_water = [self.mu_oil, self.mu_water]
 
         self.k = (9.868233 * (10 ** (-13))) * 10 ** (0)
-        self.s_water_init = 0.2 #10 ** (-4)
+        self.s_water_init = 0.0 #10 ** (-4)
         self.s_oil_init = 1 - self.s_water_init
         self.pressure_cap_init = [] #list
         self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!
@@ -47,8 +47,8 @@ class Layer:
 
         #space
         self.x_0 = 0.0
-        self.x_N = 500.0  # meters
-        self.N = 100
+        self.x_N = 100.0  # meters
+        self.N = 50
         self.h = (self.x_N - self.x_0) / (self.N - 1)
         self.z = 10.0
         self.V_ij = self.h ** 2.0 * self.z
@@ -106,6 +106,20 @@ class Layer:
         for i in range(len(s_w_graph)):
             if s_water <= s_w_graph[i]:
                 s_der = (s_w_graph[i] - s_w_graph[i - 1]) / (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1]))
+                break
+
+        return s_der
+
+    @staticmethod
+    def count_s_water_graph_der_from_p(s_water_graph, p_cap):
+        p_cap_graph = list(reversed(list(s_water_graph.keys())))
+        for i in range(len(p_cap_graph)):
+            if p_cap <= p_cap_graph[i]:
+                s_i = s_water_graph.get(p_cap_graph[i])
+                s_i_minus = s_water_graph.get(p_cap_graph[i - 1])
+                p_cap_i = p_cap_graph[i]
+                p_cap_minus = p_cap_graph[i - 1]
+                s_der = (s_water_graph.get(p_cap_graph[i]) - s_water_graph.get(p_cap_graph[i - 1])) / (p_cap_graph[i] - p_cap_graph[i - 1])
                 break
         return s_der
 

@@ -41,6 +41,9 @@ while time < oil_water_impes.time_max:
     oil_water_impes.recount_properties(cell_container)
     oil_water_impes.count_flows(flow_array)
     oil_water_impes.update_saturation(cell_container, flow_array)
+    print("CURRENT TIME ", time / 86400)
+    if time / 86400 > 15:
+        print("meme")
 
     if oil_water_impes.check_saturation_convergence(cell_container):
         oil_water_impes.tau = oil_water_impes.tau / 2.0
@@ -48,9 +51,11 @@ while time < oil_water_impes.time_max:
             cell.get_cell_state_n_plus().set_equals_to(cell.get_cell_state_n())
 
     else:
-        print(time)
+        print(time / 86400, '        ', oil_water_impes.tau)
         time += oil_water_impes.tau
         oil_water_impes.tau = max(oil_water_impes.tau * 2.0, oil_water_impes.tau_default)
+        if oil_water_impes.tau > 86400.0:
+            oil_water_impes.tau = 86400.0
         if 125 * 86400.0 - time - oil_water_impes.tau <= 0:
             oil_water_impes.tau = 125 * 86400.0 - time
 

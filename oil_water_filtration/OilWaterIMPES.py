@@ -8,7 +8,7 @@ class OilWaterIMPES(OilWater):
     def check_saturation_convergence(self, cell_container):
         if self.count_norm(
                 [cell.get_cell_state_n_plus().get_s_water() - cell.get_cell_state_n().get_s_water() for cell in
-                 cell_container.get_cells()]) > 0.01:
+                 cell_container.get_cells()]) > 0.1:
             print("S_n+1 - S_n > 0.1")
             return True
         else:
@@ -28,15 +28,16 @@ class OilWaterIMPES(OilWater):
 
     @staticmethod
     def update_pressure(cell_container, delta_list_k):
-        for i in range(1, cell_container.get_len()):
+        for i in range(1, cell_container.get_len() - 1):
             cell = cell_container.get_cells()[i]
             state = cell.get_cell_state_n_plus()
             state.set_pressure_oil(state.get_pressure_oil() + delta_list_k[i])
             state.set_pressure_water(state.get_pressure_oil() - state.get_pressure_cap())
 
+
+
     @staticmethod
     def count_a(solverSlau, cell):
-        #A = ro_oil[index] / ro_water[index]
         state_n = cell.get_cell_state_n()
         state_n_plus = cell.get_cell_state_n_plus()
         A = state_n_plus.get_ro_oil() / state_n_plus.get_ro_water()
@@ -97,6 +98,7 @@ class OilWaterIMPES(OilWater):
             cells[-1].get_cell_state_n_plus().set_s_water(cells[-2].get_cell_state_n_plus().get_s_water())
             cells[-1].get_cell_state_n_plus().set_s_oil(cells[-2].get_cell_state_n_plus().get_s_oil())
 
+
     def give_result_to_cells(self):
         pass
 
@@ -112,9 +114,12 @@ class OilWaterIMPES(OilWater):
     def show_results(self, time, layer, cell_container):
         x = np.arange(layer.x_0, layer.x_N, layer.h)
         x = np.append(x, layer.x_N)
-        file = open('s(x)_count_125_days.txt', 'w')
+        file = open('s(x)_count_364_days.txt', 'w')
+        file_pressure = open('pressure_water_impes_364.txt', 'w')
         for i in range(cell_container.get_len()):
             state = cell_container.get_cells()[i].get_cell_state_n_plus()
             file.write(str(x[i]) + ' ' + str(state.get_s_water()) + '\n')
+            file_pressure.write(str(x[i]) + ' ' + str(state.get_pressure_water()) + '\n')
         file.close()
+        file_pressure.close()
 
