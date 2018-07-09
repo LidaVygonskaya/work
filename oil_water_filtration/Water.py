@@ -9,4 +9,6 @@ class Water:
 
     @staticmethod
     def count_k_r(s_water):
+        s_water = max(0.0, s_water)
+        s_water = min(s_water, 1.0)
         return s_water ** 2.0

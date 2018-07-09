@@ -20,7 +20,7 @@ class Layer:
 
         self.k = (9.868233 * (10 ** (-13))) * 10 ** (0)
         self.s_water_init = 0.0 #10 ** (-4)
-        self.s_oil_init = 1 - self.s_water_init
+        self.s_oil_init = 1.0 - self.s_water_init
         self.pressure_cap_init = [] #list
         self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!
         self.pressure_water_init = 80 * self.atm
@@ -83,7 +83,7 @@ class Layer:
 
     def count_pcap_graph(self):
         pressure_cap_graph = {}  # from graph {s_w: pressure_cap}
-        file = open('Pcap(Sw)_linear.txt', 'r')
+        file = open('Pcap(Sw).txt', 'r')
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
@@ -92,7 +92,7 @@ class Layer:
 
     def count_s_water_graph(self):
         s_water_graph = {}
-        file = open('Pcap(Sw)_linear.txt', 'r')
+        file = open('Pcap(Sw).txt', 'r')
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
@@ -109,6 +109,16 @@ class Layer:
                 break
 
         return s_der
+
+    @staticmethod
+    def count_p_cap_graph_der(p_cap_graph, s_water):
+        s_w_graph = list(p_cap_graph.keys())
+        for i in range(len(s_w_graph)):
+            if s_water <= s_w_graph[i]:
+                p_cap_der = (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1])) / (s_w_graph[i] - s_w_graph[i - 1])
+                break
+        return p_cap_der
+
 
     @staticmethod
     def count_s_water_graph_der_from_p(s_water_graph, p_cap):

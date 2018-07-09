@@ -59,7 +59,7 @@ class OilWaterSS(OilWater):
             oil_conv_list.append(oil_conv)
 
         if self.count_max_elem(water_conv_list) > 0.01 or self.count_max_elem(oil_conv_list) > 0.01:
-            print("P_n+1 - P_n / P_n > 0.01")
+            print("P_n+1 - P_n / P_n > 0.1")
             return True
         else:
             return False
