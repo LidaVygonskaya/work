@@ -50,8 +50,20 @@ while time < oil_water_impes.time_max:
     oil_water_impes.count_flows(flow_array)
     oil_water_impes.update_saturation(cell_container, flow_array)
     oil_water_impes.update_pressure_cap(cell_container)
+
+    # x = np.arange(layer.x_0, layer.x_N, layer.h)
+    # x = np.append(x, layer.x_N)
+    # s_wat = []
+    # s_oil = []
+    #
+    # for cell in cell_container.get_cells():
+    #     s_wat.append(cell.get_cell_state_n_plus().get_s_water())
+    #
+    # plt.plot(x, s_wat, 'r')
+    # plt.show()
+
     print("CURRENT TIME ", time / 86400)
-    if time / 86400 > 1.029:
+    if time / 86400 > 1.0302:
         print("meme")
 
     if oil_water_impes.check_saturation_convergence(cell_container):
@@ -73,20 +85,26 @@ while time < oil_water_impes.time_max:
             #plt.show()
 
     else:
-        t_days = 2
-        print(time / 86400, '        ', oil_water_impes.tau)
-        time += oil_water_impes.tau
-        oil_water_impes.tau = max(oil_water_impes.tau * 2.0, oil_water_impes.tau_default)
-        if oil_water_impes.tau > 86400.0:
-            oil_water_impes.tau = 86400.0
+        # t_days = 50
+        # print(time / 86400.0, '        ', oil_water_impes.tau)
+        # oil_water_impes.tau = min(oil_water_impes.tau * 2.0, oil_water_impes.tau_default)
+        # if (time / 86400 == t_days) and (time % 86400 == 0):
+        #     oil_water_impes.show_results(time, layer, cell_container)
+        # time += oil_water_impes.tau
+        # counter += 1
+
+
+        t_days = 50
+        print(time / 86400.0, '        ', oil_water_impes.tau)
+        oil_water_impes.tau = min(oil_water_impes.tau * 2.0, oil_water_impes.tau_default)
         if t_days * 86400.0 - time - oil_water_impes.tau <= 0:
             oil_water_impes.tau = t_days * 86400.0 - time
 
         if abs(time - 86400.0 * t_days) < 1.e-16:
             oil_water_impes.show_results(time, layer, cell_container)
+        time += oil_water_impes.tau
         counter += 1
-
-
+        #
 
 
 

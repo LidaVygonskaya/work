@@ -9,8 +9,8 @@ class OilWaterIMPES(OilWater):
     def update_pressure_cap(cell_container):
         for cell in cell_container.get_cells()[1:-1]:
             s_water = cell.get_cell_state_n_plus().get_s_water()
-            if s_water > 1.0:
-                s_water = 1.0
+            #if s_water > 1.0:
+                #s_water = 1.0
             p_cap_graph = cell.layer.count_pcap_graph()
             p_cap = cell.layer.count_pressure_cap(p_cap_graph, s_water)
             cell.get_cell_state_n_plus().set_pressure_cap(p_cap)
@@ -19,7 +19,7 @@ class OilWaterIMPES(OilWater):
     def check_saturation_convergence(self, cell_container):
         if self.count_norm(
                 [cell.get_cell_state_n_plus().get_s_oil() - cell.get_cell_state_n().get_s_oil() for cell in
-                 cell_container.get_cells()]) > 0.01:
+                 cell_container.get_cells()]) > 0.1:
             print("S_n+1 - S_n > 0.1")
             return True
         else:
@@ -80,7 +80,9 @@ class OilWaterIMPES(OilWater):
         state_n_plus = cell.get_cell_state_n_plus()
         p_cap_graph = cell.layer.count_pcap_graph()
         p_cap_der = cell.layer.count_p_cap_graph_der(p_cap_graph, state_n.get_s_water())
-        A = (state_n_plus.get_fi() * state_n_plus.get_ro_oil()) / (state_n_plus.get_fi() * state_n_plus.get_ro_water() - state_n.get_fi() * state_n.get_s_water() * state_n.get_ro_water() * p_cap_der)
+        fi_der = cell.layer.fi_0 * cell.layer.c_r
+        ro_der = cell.layer.ro_water_0 * cell.layer.c_f_water
+        A = (state_n_plus.get_fi() * state_n_plus.get_ro_oil()) / (state_n_plus.get_fi() * state_n_plus.get_ro_water() - ro_der * state_n.get_s_water() * state_n.get_fi() * p_cap_der)
         solverSlau.set_matrix_coeffitients_a_d(cell.get_eq_index()[0], cell.get_eq_index()[0], state_n_plus.get_pressure_oil(), state_n.get_pressure_oil(), A * state_n_plus.get_c1_p() + state_n_plus.get_c2_p())
 
 
@@ -93,7 +95,9 @@ class OilWaterIMPES(OilWater):
         state_n = left_cell.get_cell_state_n()
         p_cap_graph = left_cell.layer.count_pcap_graph()
         p_cap_der = left_cell.layer.count_p_cap_graph_der(p_cap_graph, state_n.get_s_water())
-        A = (state_n_plus.get_fi() * state_n_plus.get_ro_oil()) / (state_n_plus.get_fi() * state_n_plus.get_ro_water() - state_n.get_fi() * state_n.get_s_water() * state_n.get_ro_water() * p_cap_der)
+        fi_der = left_cell.layer.fi_0 * left_cell.layer.c_r
+        ro_der = left_cell.layer.ro_water_0 * left_cell.layer.c_f_water
+        A = (state_n_plus.get_fi() * state_n_plus.get_ro_oil()) / (state_n_plus.get_fi() * state_n_plus.get_ro_water() - ro_der * state_n.get_s_water() * state_n.get_fi() * p_cap_der)
         b = A * cell_flow.t_oil_water[Components.WATER.value] + cell_flow.t_oil_water[Components.OIL.value]
         r_ost = - A * cell_flow.t_oil_water[Components.WATER.value] * (right_cell.get_cell_state_n_plus().get_pressure_cap() - left_cell.get_cell_state_n_plus().get_pressure_cap())
         solverSlau.add_nevyaz(left_cell.get_eq_index()[0], -r_ost)
@@ -109,7 +113,9 @@ class OilWaterIMPES(OilWater):
         state_n = right_cell.get_cell_state_n()
         p_cap_graph = right_cell.layer.count_pcap_graph()
         p_cap_der = right_cell.layer.count_p_cap_graph_der(p_cap_graph, state_n.get_s_water())
-        A = (state_n_plus.get_fi() * state_n_plus.get_ro_oil()) / (state_n_plus.get_fi() * state_n_plus.get_ro_water() - state_n.get_fi() * state_n.get_s_water() * state_n.get_ro_water() * p_cap_der)
+        fi_der = right_cell.layer.fi_0 * right_cell.layer.c_r
+        ro_der = right_cell.layer.ro_water_0 * right_cell.layer.c_f_water
+        A = (state_n_plus.get_fi() * state_n_plus.get_ro_oil()) / (state_n_plus.get_fi() * state_n_plus.get_ro_water() - ro_der * state_n.get_s_water() * state_n.get_fi() * p_cap_der)
         c = A * cell_flow.t_oil_water[Components.WATER.value] + cell_flow.t_oil_water[Components.OIL.value]
         r_ost = - A * cell_flow.t_oil_water[Components.WATER.value] * (
                     left_cell.get_cell_state_n_plus().get_pressure_cap() - right_cell.get_cell_state_n_plus().get_pressure_cap())
@@ -140,15 +146,14 @@ class OilWaterIMPES(OilWater):
             ro_der_oil = cell_i.layer.ro_oil_0 * cell_i.layer.c_f_oil
 
             p_cap_graph = cell_i.layer.count_pcap_graph()
-            p_cap_der = 1.0 / (cell_i.layer.count_s_water_graph_der(p_cap_graph, cell_state_n_i.get_s_water()))
+            p_cap_der = cell_i.layer.count_p_cap_graph_der(p_cap_graph, cell_state_n_i.get_s_water())
+            #p_cap_der = 1.0 / (cell_i.layer.count_s_water_graph_der(p_cap_graph, cell_state_n_i.get_s_water()))
 
             d_11 = (1.0 / self.tau) * cell_state_n_i.get_s_water() * (cell_state_n_i.get_fi() * ro_der + fi_der * cell_state_n_plus_i.get_ro_water())
-            d_12 = (1.0 / self.tau) * (cell_state_n_plus_i.get_ro_water() * cell_state_n_plus_i.get_ro_water() - cell_state_n_i.get_fi() * cell_state_n_i.get_s_water() * cell_state_n_i.get_ro_water() * p_cap_der)
+            d_12 = (1.0 / self.tau) * (cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_water() - ro_der * cell_state_n_i.get_s_water() * cell_state_n_i.get_ro_water() * p_cap_der)
             d_21 = (1.0 / self.tau) * (1.0 - cell_state_n_plus_i.get_s_water()) * (cell_state_n_i.get_fi() * ro_der_oil + fi_der * cell_state_n_plus_i.get_ro_oil())
-            d_22 = (1.0 / self.tau) * (-(cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_oil()))
+            d_22 = (1.0 / self.tau) * (cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_oil())
 
-            coeff1 = cell_state_n_i.get_fi() * cell_state_n_i.get_ro_water() / (
-                        cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_water())
             coeff2 = flow_array[i].t_oil_water[Components.WATER.value] * (
                         cell_state_n_plus_i_plus.get_pressure_oil() - cell_state_n_plus_i.get_pressure_oil() + cell_state_n_plus_i.get_pressure_cap() - cell_state_n_plus_i_plus.get_pressure_cap()) + \
                      flow_array[i - 1].t_oil_water[Components.WATER.value] * (
@@ -163,23 +168,25 @@ class OilWaterIMPES(OilWater):
 
             coeff3_oil = (d_21 / d_22) * (cell_state_n_plus_i.get_pressure_oil() - cell_state_n_i.get_pressure_oil())
 
-            s_water_new = cell_state_n_i.get_s_water() + (
-                        self.tau / (cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_water())) * coeff2 + coeff3_water
+            #s_water_new = cell_state_n_i.get_s_water() + (
+             #           self.tau / (cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_water())) * coeff2 + coeff3_water
+            s_water_new = cell_state_n_i.get_s_water() + (1.0 / (d_12)) * coeff2 + coeff3_water
 
             s_oil_check = cell_state_n_i.get_s_oil() + (
                         self.tau / (cell_state_n_plus_i.get_fi() * cell_state_n_plus_i.get_ro_oil())) * coeff_oil_check + coeff3_oil
 
             #s_oil_check_list.append(s_oil_check)
 
-            cell_state_n_plus_i.set_s_oil(s_oil_check)
-            s_water_new = 1.0 - s_oil_check
+            #cell_state_n_plus_i.set_s_oil(s_oil_check)
+            #s_water_new = 1.0 - s_oil_check
             #if s_water_new < 10 ** (-6):
             #    s_water_new = 0.0
-            cell_state_n_plus_i.set_s_water(s_water_new)
-
             #cell_state_n_plus_i.set_s_water(s_water_new)
-            #cell_state_n_plus_i.set_s_oil(1.0 - s_water_new)
+
+            cell_state_n_plus_i.set_s_water(s_water_new)
+            cell_state_n_plus_i.set_s_oil(1.0 - s_water_new)
             #cell_state_n_plus_i.set_s_oil(s_oil_check)
+            #cell_state_n_plus_i.set_s_water(1.0 - s_oil_check)
             cells = cell_container.get_cells()
             cells[-1].get_cell_state_n_plus().set_s_water(cells[-2].get_cell_state_n_plus().get_s_water())
             cells[-1].get_cell_state_n_plus().set_s_oil(cells[-2].get_cell_state_n_plus().get_s_oil())

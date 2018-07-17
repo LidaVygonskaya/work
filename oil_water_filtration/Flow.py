@@ -30,12 +30,5 @@ class Flow:
         for i in range(cell_container.get_len() - 1):
             flow = Flow(cells[i], cells[i + 1])
             self.count_cells_flows(flow)
-'''
-     def count_t_water_minus(layer,  pressure_water, s_water, index):
-            ro_wat = layer.count_ro_water(max(pressure_water[index - 1], pressure_water[index]))
-            k_r_water = layer.count_k_r(max(s_water[index - 1], s_water[index]))[0]
-            t_x_water_minus = (layer.k * k_r_water / layer.mu_water) * (1 / layer.h) ** 2.0 * ro_wat
-            return t_x_water_minus
-'''
 
 

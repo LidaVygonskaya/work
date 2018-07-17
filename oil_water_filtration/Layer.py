@@ -83,16 +83,16 @@ class Layer:
 
     def count_pcap_graph(self):
         pressure_cap_graph = {}  # from graph {s_w: pressure_cap}
-        file = open('Pcap(Sw).txt', 'r')
+        file = open('Pcap(Sw)_linear2.txt', 'r')
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
-            pressure_cap_graph.update({float(s[0]): float(s[1]) * self.atm})
+            pressure_cap_graph.update({float(s[0]) :  float(s[1]) * self.atm})
         return pressure_cap_graph
 
     def count_s_water_graph(self):
         s_water_graph = {}
-        file = open('Pcap(Sw).txt', 'r')
+        file = open('Pcap(Sw)_linear2.txt', 'r')
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
@@ -139,6 +139,7 @@ class Layer:
         for i in range(len(s_w_graph)):
             if s_water <= s_w_graph[i]:
                 p_cap = p_cap_graph.get(s_w_graph[i - 1]) + (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1])) / (s_w_graph[i] - s_w_graph[i - 1]) * (s_water - s_w_graph[i - 1])
+                #p_cap = 0
                 break
         return p_cap
 

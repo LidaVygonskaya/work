@@ -6,6 +6,15 @@ from oil_water_filtration.Write import write, write_nevyaz
 
 
 class OilWaterSS(OilWater):
+    def check_saturation_convergence(self, cell_container):
+        if self.count_max_elem(
+                [cell.get_cell_state_n_plus().get_s_water() - cell.get_cell_state_n().get_s_water() for cell in
+                 cell_container.get_cells()]) > 0.1:
+            print("S_n+1 - S_n > 0.1")
+            return True
+        else:
+            return False
+
     def show_results(self, time, layer, cell_container):
         x = np.arange(layer.x_0, layer.x_N, layer.h)
         x = np.append(x, layer.x_N)
@@ -58,7 +67,7 @@ class OilWaterSS(OilWater):
             water_conv_list.append(water_conv)
             oil_conv_list.append(oil_conv)
 
-        if self.count_max_elem(water_conv_list) > 0.01 or self.count_max_elem(oil_conv_list) > 0.01:
+        if self.count_max_elem(water_conv_list) > 0.1 or self.count_max_elem(oil_conv_list) > 0.1:
             print("P_n+1 - P_n / P_n > 0.1")
             return True
         else:
@@ -72,7 +81,7 @@ class OilWaterSS(OilWater):
             p_cap_conv = (delta_list_k[i - 1][1][0] - delta_list_k[i - 1][0][0]) / cell.get_cell_state_n().get_pressure_cap()
             p_cap_conv_list.append(p_cap_conv)
 
-        if self.count_max_elem(p_cap_conv_list) > 4.0:
+        if self.count_max_elem(p_cap_conv_list) > 0.1:
             print("P_n+1 - P_n / P_n > 0.1")
             return True
         else:
@@ -123,7 +132,7 @@ class OilWaterSS(OilWater):
         right_cell = cell_flow.get_right_cell()
         left_cell = cell_flow.get_left_cell()
         c = np.matrix(
-            [[cell_flow.t_oil_water[Components.WATER.value], 0], [0, cell_flow.t_oil_water[Components.OIL.value]]])
+            [[cell_flow.t_oil_water[Components.WATER.value], 0.0], [0.0, cell_flow.t_oil_water[Components.OIL.value]]])
 
         # от с
         t_p_11 = cell_flow.t_oil_water[Components.WATER.value] * left_cell.get_cell_state_n_plus().get_pressure_water()
@@ -210,6 +219,6 @@ class OilWaterSS(OilWater):
 
     @staticmethod
     def reshape_matrices(solver_slau):
-        solver_slau.coefficient_matrix = np.zeros((98, 98, 2, 2), float)
-        solver_slau.nevyaz_vector = np.zeros((98, 2, 1))
+        solver_slau.coefficient_matrix = np.zeros((48, 48, 2, 2), float)
+        solver_slau.nevyaz_vector = np.zeros((48, 2, 1))
 

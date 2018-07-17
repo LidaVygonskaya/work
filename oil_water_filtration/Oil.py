@@ -11,8 +11,8 @@ class Oil:
 
     @staticmethod
     def count_k_r(s_oil):
-        s_oil = max(0.0, s_oil)
-        s_oil = min(s_oil, 1.0)
+        #s_oil = max(0.0, s_oil)
+        #_oil = min(s_oil, 1.0)
         return s_oil ** 2.0
 
 
