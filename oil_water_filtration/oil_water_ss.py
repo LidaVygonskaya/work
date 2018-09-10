@@ -40,19 +40,24 @@ while time < oil_water_ss.time_max:
         oil_water_ss.solve_slau(solver_slau)
         delta_list_k = solver_slau.get_result()
         solver_slau.clear_result()
+        oil_water_ss.update_pressure(cell_container, delta_list_k)
+
+       # oil_water_ss.update_saturation(cell_container, flow_array)
+        oil_water_ss.improve(cell_container, flow_array)
 
         #Проверка на сходимость
         #if oil_water_ss.check_pressure_convergence(cell_container, delta_list_k):
-        if oil_water_ss.check_pressure_convergence(cell_container, delta_list_k):
-            oil_water_ss.tau = oil_water_ss.tau / 2.0
-            for cell in cell_container.get_cells():
-                cell.get_cell_state_n_plus().set_equals_to(cell.get_cell_state_n())
-        else:
-            oil_water_ss.update_pressure(cell_container, delta_list_k)
+        # if oil_water_ss.check_pressure_convergence(cell_container, delta_list_k):
+        #     oil_water_ss.tau = oil_water_ss.tau / 2.0
+        #     for cell in cell_container.get_cells():
+        #         cell.get_cell_state_n_plus().set_equals_to(cell.get_cell_state_n())
+        # else:
+        #     oil_water_ss.update_pressure(cell_container, delta_list_k)
             #oil_water_ss.tau = max(oil_water_ss.tau * 2.0, oil_water_ss.tau_default)
 
     oil_water_ss.recount_properties(cell_container)
     oil_water_ss.update_saturation(cell_container, flow_array)
+
     if oil_water_ss.check_saturation_convergence(cell_container):
         oil_water_ss.tau = oil_water_ss.tau / 2.0
         for cell in cell_container.get_cells():
@@ -62,7 +67,7 @@ while time < oil_water_ss.time_max:
         oil_water_ss.tau = min(oil_water_ss.tau * 2.0, oil_water_ss.tau_default)
         print("COUNTER " + str(counter))
 
-        if counter == 125 or counter == 364 or counter == 50 or counter == 1 or counter == 40:
+        if counter == 125 or counter == 364 or counter == 20 or counter == 1 or counter == 40:
             oil_water_ss.show_results(counter, layer, cell_container)
 
         if (time / 86400 == t_days) and (time % 86400 == 0):

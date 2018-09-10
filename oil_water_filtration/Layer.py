@@ -19,7 +19,7 @@ class Layer:
         self.mu_oil_water = [self.mu_oil, self.mu_water]
 
         self.k = (9.868233 * (10 ** (-13))) * 10 ** (0)
-        self.s_water_init = 0.0 #10 ** (-4)
+        self.s_water_init = 0.9 #10 ** (-4)
         self.s_oil_init = 1.0 - self.s_water_init
         self.pressure_cap_init = [] #list
         self.pressure_oil_init = 80.0 * self.atm#!!!!!!!!!!!!!!
@@ -83,7 +83,7 @@ class Layer:
 
     def count_pcap_graph(self):
         pressure_cap_graph = {}  # from graph {s_w: pressure_cap}
-        file = open('Pcap(Sw)_linear2.txt', 'r')
+        file = open('Pcap(Sw).txt', 'r')
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
@@ -92,7 +92,7 @@ class Layer:
 
     def count_s_water_graph(self):
         s_water_graph = {}
-        file = open('Pcap(Sw)_linear2.txt', 'r')
+        file = open('Pcap(Sw).txt', 'r')
         for line in file.readlines():
             line = line.rstrip()
             s = line.split('\t')
@@ -106,8 +106,10 @@ class Layer:
         for i in range(len(s_w_graph)):
             if s_water <= s_w_graph[i]:
                 s_der = (s_w_graph[i] - s_w_graph[i - 1]) / (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1]))
-                break
 
+                break
+        #if s_water == 0.0 or s_water == 1.0:
+        #    s_der = 0.0
         return s_der
 
     @staticmethod
@@ -131,6 +133,8 @@ class Layer:
                 p_cap_minus = p_cap_graph[i - 1]
                 s_der = (s_water_graph.get(p_cap_graph[i]) - s_water_graph.get(p_cap_graph[i - 1])) / (p_cap_graph[i] - p_cap_graph[i - 1])
                 break
+        if p_cap < 0:
+            s_der = 0.0
         return s_der
 
     @staticmethod
@@ -139,7 +143,7 @@ class Layer:
         for i in range(len(s_w_graph)):
             if s_water <= s_w_graph[i]:
                 p_cap = p_cap_graph.get(s_w_graph[i - 1]) + (p_cap_graph.get(s_w_graph[i]) - p_cap_graph.get(s_w_graph[i - 1])) / (s_w_graph[i] - s_w_graph[i - 1]) * (s_water - s_w_graph[i - 1])
-                #p_cap = 0
+                p_cap = 0
                 break
         return p_cap
 
@@ -147,7 +151,7 @@ class Layer:
         p_cap_graph = list(s_water_graph.keys())
         p_cap_graph.reverse()
         for i in range(len(p_cap_graph)):
-            if p_cap <= p_cap_graph[i]:
+            if 0 < p_cap <= p_cap_graph[i]:
                 s_wat = s_water_graph.get(p_cap_graph[i - 1]) + (s_water_graph.get(p_cap_graph[i]) - s_water_graph.get(p_cap_graph[i - 1])) / (p_cap_graph[i] - p_cap_graph[i - 1]) * (p_cap - p_cap_graph[i - 1])
                 break
             s_wat = 0.0
